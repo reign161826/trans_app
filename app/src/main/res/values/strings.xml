@@ -1,5 +1,25 @@
 <resources>
     <string name="app_name">My Application</string>
+    <string name="history_title">History</string>
+    <string name="empty_history">No history yet</string>
+    <string name="about_title">About</string>
+    <string name="english">English</string>
+    <string name="how_much">how much</string>
+    <string name="filipino">Filipino</string>
+    <string name="magkano_">magkano?</string>
+    <string name="basic_phrases">Basic Phrases</string>
+    <string name="how_to_use_the_application_">How to use the application?</string>
+    <string name="do_s">Do’s</string>
+    <string name="dont_s">Dont’s</string>
+    <string name="use_clear_and_simple_words_or_">Use clear and simple words or sentences. Use proper spelling and grammar whenever possible. Speak clearly when using the voice input feature. Use common or formal expressions for more accurate translations. Review the translated result before using it in communication.</string>
+    <string name="open_the_application_on_your_a">Open the application on your Android device. Select the language you would like to translate. Enter, speak, or scan the text that you want to translate. View the translated results instantly on the screen. Tap the audio button to hear the correct pronunciation. Access previous translations through the translation history feature.</string>
+    <string name="avoid_using_slang_words_or_inf">Avoid using slang words or informal expressions. Avoid using abbreviations, shortcuts, or text language (e.g., “u,” “btw,” “lol”). Do not use offensive or inappropriate language. Avoid speaking too fast during voice input. Do not rely solely on the application for deep or highly technical translations.</string>
+    <string name="how_to_use">How to Use</string>
+    <string name="about_q1">Why was the application\ncreated?</string>
+    <string name="about_a1">The application was created to address communication difficulties caused by regional language barriers in the Philippines, particularly the lack of an accessible tool for translating the Cuyonon language. Many tourists and locals experience misunderstandings due to limited knowledge of regional dialects. This application was developed to help preserve the Cuyonon language while providing an easy and reliable way for users to communicate effectively.</string>
+    <string name="about_q2">What is the purpose of this\napplication?</string>
+    <string name="about_a2">The purpose of this application is to help users translate basic words and common phrases between Cuyonon, Filipino, and English, thereby improving communication between tourists and locals in Palawan. It aims to reduce language barriers, support cultural understanding, and promote the preservation of the Cuyonon language by offering features such as offline translation, text-to-speech pronunciation, automatic language detection, and translation history, making it easier and faster to use.</string>
+    <string name="nav_open">Open navigation drawer</string>
     <string-array name="languages_array">
         <item>Filipino</item>
         <item>Cuyonon</item>

@@ -22,6 +22,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".HistoryActivity"
+            android:label="History" />
+        <activity
+            android:name=".AboutActivity"
+            android:label="About" />
+        <activity
+            android:name=".HowToUseActivity"
+            android:label="How to Use" />
+        <activity
+            android:name=".BasicPhrasesActivity"
+            android:label="Basic Phrases" />
     </application>
 
 </manifest>

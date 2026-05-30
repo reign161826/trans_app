@@ -4,28 +4,33 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F4F4"
+    android:background="#FFF6F0D7"
     tools:context=".MainActivity">
 
     <!-- HEADER -->
     <LinearLayout
         android:id="@+id/headerLayout"
         android:layout_width="0dp"
-        android:layout_height="110dp"
-        android:background="#DCE8C9"
+        android:layout_height="80dp"
+        android:background="#FF9CAB84"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="20dp"
+        android:paddingStart="4dp"
         android:paddingEnd="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_menu_sort_by_size" />
+            android:id="@+id/btnMenu"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/nav_open"
+            android:padding="16dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_menu_burger"
+            app:tint="#FFFFFF" />
 
         <TextView
             android:layout_width="0dp"
@@ -33,7 +38,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="PH Regional"
-            android:textColor="@android:color/black"
+            android:textColor="#FFFFFF"
             android:textSize="24sp"
             android:textStyle="bold" />
 
