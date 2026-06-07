@@ -87,26 +87,15 @@
         </LinearLayout>
 
         <!-- Scrollable Phrases List -->
-        <androidx.core.widget.NestedScrollView
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_phrases"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginTop="16dp"
+            android:paddingBottom="24dp"
+            android:clipToPadding="false"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/pill_selector_container">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingBottom="24dp">
-
-                <include layout="@layout/item_phrase" />
-                <include layout="@layout/item_phrase" />
-                <include layout="@layout/item_phrase" />
-                <include layout="@layout/item_phrase" />
-
-            </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
+            app:layout_constraintTop_toBottomOf="@id/pill_selector_container" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -116,7 +105,12 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
+        android:background="#F6F0D7"
         app:headerLayout="@layout/nav_header"
+        app:itemIconPadding="24dp"
+        app:itemIconTint="#9CAB84"
+        app:itemShapeFillColor="#E6E0C5"
+        app:itemTextColor="#9CAB84"
         app:menu="@menu/nav_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

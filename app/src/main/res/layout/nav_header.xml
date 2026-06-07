@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="176dp"
-    android:background="#FF9CAB84">
+    android:layout_height="176dp">
 
     <ImageView
         android:id="@+id/nav_banner"
@@ -10,20 +9,5 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:src="@drawable/nav_banner" />
-
-    <TextView
-        android:id="@+id/nav_header_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_margin="16dp"
-        android:text="@string/nav_header_title"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:shadowColor="#000000"
-        android:shadowDx="1"
-        android:shadowDy="1"
-        android:shadowRadius="4" />
 
 </FrameLayout>

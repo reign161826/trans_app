@@ -30,9 +30,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private val handler = Handler(Looper.getMainLooper())
     private var translationRunnable: Runnable? = null
 
+    private var cuyononDictionary = mutableMapOf<String, String>()
+    private var filipinoToCuyonon = mutableMapOf<String, String>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_drawer)
+
+        loadDictionaryFromCsv()
 
         drawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)
@@ -164,7 +169,52 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         saveToHistory(text, translated)
     }
 
+    private fun loadDictionaryFromCsv() {
+        try {
+            val inputStream = assets.open("wordlist.csv")
+            val reader = inputStream.bufferedReader()
+            reader.useLines { lines ->
+                lines.forEach { line ->
+                    val tokens = line.split(",")
+                    if (tokens.size >= 3) {
+                        val english = tokens[0].trim().lowercase()
+                        val filipino = tokens[1].trim().lowercase()
+                        val cuyonon = tokens[2].trim().lowercase()
+
+                        if (english.isNotEmpty() && cuyonon.isNotEmpty()) {
+                            cuyononDictionary[english] = cuyonon
+                        }
+                        if (filipino.isNotEmpty() && cuyonon.isNotEmpty()) {
+                            filipinoToCuyonon[filipino] = cuyonon
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun translateOffline(text: String, source: String, target: String): String {
+        val lowerText = text.lowercase().trim()
+
+        if (target == "Cuyonon") {
+            if (source == "English") {
+                return cuyononDictionary[lowerText] ?: translateByWords(lowerText, cuyononDictionary)
+            } else if (source == "Filipino") {
+                return filipinoToCuyonon[lowerText] ?: translateByWords(lowerText, filipinoToCuyonon)
+            }
+        } else if (source == "Cuyonon") {
+            // Reverse lookup for Cuyonon to English/Filipino
+            val targetMap = if (target == "English") {
+                cuyononDictionary.entries.associate { it.value to it.key }
+            } else {
+                filipinoToCuyonon.entries.associate { it.value to it.key }
+            }
+            return targetMap[lowerText] ?: translateByWords(lowerText, targetMap)
+        }
+
+        // Fallback to old hardcoded logic for English-Filipino
         val dictionary = mapOf(
             "English-Filipino" to mapOf(
                 "hello" to "kumusta",
@@ -215,45 +265,28 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 "ano" to "what",
                 "ito" to "this",
                 "ano ito" to "what is this?"
-            ),
-            "English-Cuyonon" to mapOf(
-                "hello" to "kumusta",
-                "good morning" to "maayad nga timprano",
-                "thank you" to "salamat",
-                "goodbye" to "paalam",
-                "how much" to "pila",
-                "where" to "adiman",
-                "beautiful" to "maitlo",
-                "friend" to "kabalay"
-            ),
-            "Cuyonon-English" to mapOf(
-                "kumusta" to "hello",
-                "maayad nga timprano" to "good morning",
-                "salamat" to "thank you",
-                "pila" to "how much",
-                "adiman" to "where",
-                "maitlo" to "beautiful",
-                "kabalay" to "friend"
             )
         )
 
         val key = "$source-$target"
         val langDict = dictionary[key] ?: return text
-        val lowerText = text.lowercase().trim()
         
-        // 1. Try to find exact match of the entire phrase (best match)
+        // 1. Try to find exact match
         langDict[lowerText]?.let { return it }
         
-        // 2. Word-by-word fallback if no full phrase match
-        val words = lowerText.split("\\s+".toRegex())
+        // 2. Word-by-word fallback
+        return translateByWords(lowerText, langDict)
+    }
+
+    private fun translateByWords(text: String, dict: Map<String, String>): String {
+        val words = text.split("\\s+".toRegex())
         if (words.size > 1) {
             val translatedWords = words.map { word ->
-                langDict[word] ?: word
+                dict[word] ?: word
             }
             return translatedWords.joinToString(" ")
         }
-        
-        return text // Return original text if no translation found
+        return text
     }
 
     private fun saveToHistory(source: String, target: String) {
