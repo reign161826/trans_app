@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Speaker Body -->
+    <path
+        android:fillColor="#4E5B2E"
+        android:pathData="M5,9H3.5C2.67,9 2,9.67 2,10.5v3c0,0.83 0.67,1.5 1.5,1.5H5l4.5,4.5V4.5L5,9z" />
+    <!-- 3 Waves as clean arcs (Highlighting with different color or maintaining same for consistency) -->
+    <!-- Usually 'active' means it is currently playing sound, so we keep the full waves -->
+    <path
+        android:strokeColor="#9CAB84"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M13,9.5c0.7,0.7 1.1,1.6 1.1,2.5s-0.4,1.8 -1.1,2.5" />
+    <path
+        android:strokeColor="#9CAB84"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M16,7c1.2,1.2 2,2.8 2,5s-0.8,3.8 -2,5" />
+    <path
+        android:strokeColor="#9CAB84"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M19,4.5c1.8,1.8 3,4.2 3,7.5s-1.2,5.7 -3,7.5" />
+</vector>

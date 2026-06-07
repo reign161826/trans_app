@@ -19,7 +19,10 @@
     <string name="about_a1">The application was created to address communication difficulties caused by regional language barriers in the Philippines, particularly the lack of an accessible tool for translating the Cuyonon language. Many tourists and locals experience misunderstandings due to limited knowledge of regional dialects. This application was developed to help preserve the Cuyonon language while providing an easy and reliable way for users to communicate effectively.</string>
     <string name="about_q2">What is the purpose of this\napplication?</string>
     <string name="about_a2">The purpose of this application is to help users translate basic words and common phrases between Cuyonon, Filipino, and English, thereby improving communication between tourists and locals in Palawan. It aims to reduce language barriers, support cultural understanding, and promote the preservation of the Cuyonon language by offering features such as offline translation, text-to-speech pronunciation, automatic language detection, and translation history, making it easier and faster to use.</string>
+    <string name="nav_header_title">PH Regional Translation</string>
     <string name="nav_open">Open navigation drawer</string>
+    <string name="scan_text">Scan text</string>
+    <string name="translation_history">Translation History</string>
     <string-array name="languages_array">
         <item>Filipino</item>
         <item>Cuyonon</item>
