@@ -1,6 +1,10 @@
 package com.example.myapplication
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,20 +16,28 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Locale
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, TextToSpeech.OnInitListener {
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var inputText: EditText
     private lateinit var outputText: TextView
     private lateinit var spinnerSource: Spinner
     private lateinit var spinnerTarget: Spinner
+
+    private var tts: TextToSpeech? = null
+    private val SPEECH_REQUEST_CODE = 100
+    private val RECORD_AUDIO_REQUEST_CODE = 101
 
     private val handler = Handler(Looper.getMainLooper())
     private var translationRunnable: Runnable? = null
@@ -96,13 +108,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             startActivity(intent)
         }
 
-        var isSpeaking = false
         btnSpeak.setOnClickListener {
-            isSpeaking = !isSpeaking
-            if (isSpeaking) {
+            val text = outputText.text.toString()
+            if (text.isNotEmpty() && text != "Translated text here...") {
+                speakText(text)
                 btnSpeak.setImageResource(R.drawable.ic_speak_active)
-            } else {
-                btnSpeak.setImageResource(R.drawable.ic_speak)
+                handler.postDelayed({
+                    btnSpeak.setImageResource(R.drawable.ic_speak)
+                }, 2000)
             }
         }
 
@@ -110,21 +123,91 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
             val clip = android.content.ClipData.newPlainText("Translated Text", outputText.text)
             clipboard.setPrimaryClip(clip)
-            android.widget.Toast.makeText(this, "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
         }
 
         btnCopyInput.setOnClickListener {
             val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
             val clip = android.content.ClipData.newPlainText("Input Text", inputText.text)
             clipboard.setPrimaryClip(clip)
-            android.widget.Toast.makeText(this, "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
         }
 
         btnMic.setOnClickListener {
-            android.widget.Toast.makeText(this, "Voice input not implemented", android.widget.Toast.LENGTH_SHORT).show()
+            checkPermissionAndListen()
         }
 
+        tts = TextToSpeech(this, this)
+
         handleIntent(intent)
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts?.language = Locale.US
+        } else {
+            Toast.makeText(this, "TTS Initialization failed", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun checkPermissionAndListen() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), RECORD_AUDIO_REQUEST_CODE)
+        } else {
+            listen()
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                listen()
+            } else {
+                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun listen() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
+        try {
+            startActivityForResult(intent, SPEECH_REQUEST_CODE)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Speech recognition not supported", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            val result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            if (!result.isNullOrEmpty()) {
+                inputText.setText(result[0])
+            }
+        }
+    }
+
+    private fun speakText(text: String) {
+        val targetLang = spinnerTarget.selectedItem.toString()
+        val locale = when (targetLang) {
+            "English" -> Locale.US
+            "Filipino" -> Locale("fil", "PH")
+            else -> Locale.US
+        }
+        tts?.language = locale
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+
+    override fun onDestroy() {
+        tts?.let {
+            it.stop()
+            it.shutdown()
+        }
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
