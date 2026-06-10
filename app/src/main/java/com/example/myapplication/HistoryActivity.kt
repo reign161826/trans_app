@@ -2,6 +2,7 @@ package com.example.myapplication
 
 import android.content.Intent
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
@@ -12,13 +13,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 import org.json.JSONArray
+import java.util.Locale
 
-class HistoryActivity : AppCompatActivity() {
+class HistoryActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: HistoryAdapter
     private lateinit var emptyText: TextView
+    private var tts: TextToSpeech? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,8 +36,10 @@ class HistoryActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recycler_view_history)
         emptyText = findViewById(R.id.text_empty_history)
         
+        tts = TextToSpeech(this, this)
+
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = HistoryAdapter(emptyList()) { item ->
+        adapter = HistoryAdapter(emptyList(), tts) { item ->
             val intent = Intent(this, MainActivity::class.java).apply {
                 putExtra("sourceText", item.sourceText)
                 putExtra("targetText", item.targetText)
@@ -47,7 +52,7 @@ class HistoryActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
 
-        val btnDeleteAll: ImageButton = findViewById(R.id.btn_delete_all)
+        val btnDeleteAll: TextView = findViewById(R.id.btn_delete_all)
         btnDeleteAll.setOnClickListener {
             clearHistory()
         }
@@ -114,6 +119,20 @@ class HistoryActivity : AppCompatActivity() {
     private fun clearHistory() {
         getSharedPreferences("translation_history", MODE_PRIVATE).edit().clear().apply()
         loadHistory()
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts?.language = Locale.US
+        }
+    }
+
+    override fun onDestroy() {
+        tts?.let {
+            it.stop()
+            it.shutdown()
+        }
+        super.onDestroy()
     }
 
     override fun onBackPressed() {

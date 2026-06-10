@@ -16,50 +16,38 @@
             android:id="@+id/header_layout"
             android:layout_width="match_parent"
             android:layout_height="80dp"
-            android:background="#FF9CAB84"
             app:layout_constraintTop_toTopOf="parent">
-
-            <TextView
-                android:id="@+id/history_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:text="@string/history_title"
-                android:textColor="#FFF6F0D7"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
 
             <ImageButton
                 android:id="@+id/btn_menu_history"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:layout_marginStart="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/nav_open"
-                android:padding="16dp"
+                android:padding="24dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_menu_burger"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="#FFFFFF" />
+                app:tint="#9CAB84" />
 
-            <ImageButton
+            <TextView
                 android:id="@+id/btn_delete_all"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_marginEnd="16dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Clear all history"
-                android:src="@android:drawable/ic_menu_delete"
+                android:background="@drawable/bg_pill_selector"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="8dp"
+                android:text="Clear"
+                android:textColor="#4E612C"
+                android:textSize="16sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:tint="#FFF6F0D7" />
+                app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

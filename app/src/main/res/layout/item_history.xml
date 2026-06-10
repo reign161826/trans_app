@@ -3,75 +3,118 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="#A8D2DCB6"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    android:layout_marginBottom="16dp"
+    app:cardBackgroundColor="#D2DCB6"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/layout_languages"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
             <TextView
                 android:id="@+id/text_source_lang"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="English"
-                android:textColor="#FF4E612C"
-                android:textSize="12sp"
+                android:textColor="#4E612C"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
             <ImageView
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_gravity="center_vertical"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginHorizontal="12dp"
                 android:src="@drawable/ic_arrow_forward"
-                app:tint="#FF4E612C" />
+                app:tint="#4E612C" />
 
             <TextView
                 android:id="@+id/text_target_lang"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cuyonon"
-                android:textColor="#FF4E612C"
-                android:textSize="12sp"
+                android:text="Filipino"
+                android:textColor="#4E612C"
+                android:textSize="18sp"
                 android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layout_languages">
+
+            <TextView
+                android:id="@+id/text_source_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="how much"
+                android:textColor="#4E612C"
+                android:textSize="18sp" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginHorizontal="12dp"
+                android:src="@drawable/ic_arrow_forward"
+                app:tint="#4E612C" />
+
+            <TextView
+                android:id="@+id/text_target_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="magkano?"
+                android:textColor="#4E612C"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layout_content">
+
+            <ImageButton
+                android:id="@+id/btn_speak_history"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_circle_outline"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_speak"
+                app:tint="#4E612C" />
+
+            <ImageButton
+                android:id="@+id/btn_copy_history"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="12dp"
+                android:background="@drawable/bg_circle_button"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_copy"
+                app:tint="#FFFFFF" />
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/text_source_content"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Hello"
-            android:textColor="#FF3A3838"
-            android:textSize="16sp" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:background="#40000000" />
-
-        <TextView
-            android:id="@+id/text_target_content"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Kumusta"
-            android:textColor="#FF3A3838"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>
