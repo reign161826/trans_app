@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var inputText: EditText
     private lateinit var outputText: TextView
+    private lateinit var suggestionText: TextView
     private lateinit var spinnerSource: Spinner
     private lateinit var spinnerTarget: Spinner
 
@@ -44,6 +45,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private var cuyononDictionary = mutableMapOf<String, String>()
     private var filipinoToCuyonon = mutableMapOf<String, String>()
+    
+    private var englishWords = mutableSetOf<String>()
+    private var filipinoWords = mutableSetOf<String>()
+    private var cuyononWords = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +69,34 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         spinnerTarget = findViewById(R.id.spinnerTarget)
         val btnSwitch: ImageView = findViewById(R.id.btnSwitch)
 
+        // Set default selection: English (2) to Cuyonon (1) based on the array
+        spinnerSource.setSelection(2) // English
+        spinnerTarget.setSelection(1) // Cuyonon
+
+        val languageListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                if (spinnerSource.selectedItemPosition == spinnerTarget.selectedItemPosition) {
+                    // Prevent same language selection by switching the other spinner
+                    val otherPos = (position + 1) % 3
+                    if (parent == spinnerSource) {
+                        spinnerTarget.setSelection(otherPos)
+                    } else {
+                        spinnerSource.setSelection(otherPos)
+                    }
+                }
+                
+                // Re-translate if there's text
+                val text = inputText.text.toString().trim()
+                if (text.isNotEmpty()) {
+                    performTranslation(text)
+                }
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+
+        spinnerSource.onItemSelectedListener = languageListener
+        spinnerTarget.onItemSelectedListener = languageListener
+
         btnSwitch.setOnClickListener {
             val sourcePos = spinnerSource.selectedItemPosition
             val targetPos = spinnerTarget.selectedItemPosition
@@ -73,15 +106,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         inputText = findViewById(R.id.inputText)
         outputText = findViewById(R.id.outputText)
+        suggestionText = findViewById(R.id.suggestionText)
 
         inputText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val text = s.toString()
+                updateSuggestion(text)
+
                 translationRunnable?.let { handler.removeCallbacks(it) }
                 translationRunnable = Runnable {
-                    val text = s.toString().trim()
-                    if (text.isNotEmpty()) {
-                        performTranslation(text)
+                    val trimmedText = text.trim()
+                    if (trimmedText.isNotEmpty()) {
+                        performTranslation(trimmedText)
                     } else {
                         outputText.text = ""
                     }
@@ -140,6 +177,41 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         tts = TextToSpeech(this, this)
 
         handleIntent(intent)
+        checkShowGuidelines()
+    }
+
+    private fun checkShowGuidelines() {
+        val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+        val dontShowAgain = prefs.getBoolean("dont_show_guidelines", false)
+
+        if (!dontShowAgain) {
+            showGuidelinesDialog()
+        }
+    }
+
+    private fun showGuidelinesDialog() {
+        val dialog = android.app.Dialog(this)
+        dialog.setContentView(R.layout.dialog_guidelines)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        // Set dialog width to 90% of screen width to prevent "squished" look
+        val width = (resources.displayMetrics.widthPixels * 0.90).toInt()
+        dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+
+        val btnClose = dialog.findViewById<ImageButton>(R.id.btn_close_dialog)
+        val cbDontShow = dialog.findViewById<android.widget.CheckBox>(R.id.cb_dont_show_again)
+
+        btnClose.setOnClickListener {
+            if (cbDontShow.isChecked) {
+                getSharedPreferences("app_settings", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("dont_show_guidelines", true)
+                    .apply()
+            }
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     override fun onInit(status: Int) {
@@ -252,23 +324,54 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         saveToHistory(text, translated)
     }
 
+    private fun updateSuggestion(text: String) {
+        if (text.isEmpty()) {
+            suggestionText.text = ""
+            return
+        }
+
+        val sourceLang = spinnerSource.selectedItem.toString()
+        val wordList = when (sourceLang) {
+            "English" -> englishWords
+            "Filipino" -> filipinoWords
+            "Cuyonon" -> cuyononWords
+            else -> emptySet<String>()
+        }
+
+        val lowerText = text.lowercase()
+        val suggestion = wordList.find { it.startsWith(lowerText) && it != lowerText }
+
+        if (suggestion != null) {
+            // Match the case of the input
+            val result = text + suggestion.substring(text.length)
+            suggestionText.text = result
+        } else {
+            suggestionText.text = ""
+        }
+    }
+
     private fun loadDictionaryFromCsv() {
         try {
             val inputStream = assets.open("wordlist.csv")
             val reader = inputStream.bufferedReader()
             reader.useLines { lines ->
-                lines.forEach { line ->
+                lines.toList().drop(1).forEach { line ->
                     val tokens = line.split(",")
                     if (tokens.size >= 3) {
                         val english = tokens[0].trim().lowercase()
                         val filipino = tokens[1].trim().lowercase()
                         val cuyonon = tokens[2].trim().lowercase()
 
-                        if (english.isNotEmpty() && cuyonon.isNotEmpty()) {
-                            cuyononDictionary[english] = cuyonon
+                        if (english.isNotEmpty()) {
+                            englishWords.add(english)
+                            if (cuyonon.isNotEmpty()) cuyononDictionary[english] = cuyonon
                         }
-                        if (filipino.isNotEmpty() && cuyonon.isNotEmpty()) {
-                            filipinoToCuyonon[filipino] = cuyonon
+                        if (filipino.isNotEmpty()) {
+                            filipinoWords.add(filipino)
+                            if (cuyonon.isNotEmpty()) filipinoToCuyonon[filipino] = cuyonon
+                        }
+                        if (cuyonon.isNotEmpty()) {
+                            cuyononWords.add(cuyonon)
                         }
                     }
                 }

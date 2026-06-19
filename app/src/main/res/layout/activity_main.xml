@@ -121,6 +121,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <TextView
+            android:id="@+id/suggestionText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            android:gravity="top"
+            android:padding="20dp"
+            android:textColor="#BDBDBD"
+            android:textSize="18sp"
+            android:visibility="visible" />
+
         <EditText
             android:id="@+id/inputText"
             android:layout_width="match_parent"
@@ -131,7 +142,8 @@
             android:padding="20dp"
             android:textColor="#4E5B2E"
             android:textColorHint="#9CAB84"
-            android:textSize="18sp" />
+            android:textSize="18sp"
+            android:inputType="textNoSuggestions" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -149,7 +161,8 @@
                 android:background="@drawable/bg_circle_outline"
                 android:padding="12dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_mic" />
+                android:src="@drawable/ic_mic"
+                app:tint="#4E612C" />
 
             <ImageButton
                 android:id="@+id/btnCopyInput"
@@ -159,7 +172,8 @@
                 android:background="@drawable/bg_circle_outline"
                 android:padding="12dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_copy" />
+                android:src="@drawable/ic_copy"
+                app:tint="#4E612C" />
 
         </LinearLayout>
 
@@ -202,7 +216,8 @@
                 android:background="@drawable/bg_circle_outline"
                 android:padding="12dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_speak" />
+                android:src="@drawable/ic_speak"
+                app:tint="#4E612C" />
 
             <ImageButton
                 android:id="@+id/btnCopy"
@@ -212,7 +227,8 @@
                 android:background="@drawable/bg_circle_outline"
                 android:padding="12dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_copy" />
+                android:src="@drawable/ic_copy"
+                app:tint="#4E612C" />
 
         </LinearLayout>
 

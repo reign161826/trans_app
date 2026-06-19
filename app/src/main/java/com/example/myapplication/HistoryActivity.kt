@@ -81,6 +81,11 @@ class HistoryActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     startActivity(intent)
                     finish()
                 }
+                R.id.nav_basic_phrases -> {
+                    val intent = Intent(this@HistoryActivity, BasicPhrasesActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
             }
             drawerLayout.closeDrawer(GravityCompat.START)
             true

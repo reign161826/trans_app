@@ -28,4 +28,8 @@
         <item>Cuyonon</item>
         <item>English</item>
     </string-array>
+    <string-array name="phrases_languages_array">
+        <item>Filipino</item>
+        <item>English</item>
+    </string-array>
 </resources>

@@ -175,7 +175,12 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
+        android:background="#F6F0D7"
         app:headerLayout="@layout/nav_header"
+        app:itemIconPadding="24dp"
+        app:itemIconTint="#9CAB84"
+        app:itemShapeFillColor="#E6E0C5"
+        app:itemTextColor="#9CAB84"
         app:menu="@menu/nav_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

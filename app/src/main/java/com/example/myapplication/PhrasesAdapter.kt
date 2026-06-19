@@ -31,14 +31,18 @@ class PhrasesAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = phrasesList[position]
         
-        val sourceLang = "English"
-        val targetLang = currentFilter
+        val sourceLang = currentFilter
+        val targetLang = "Cuyonon"
         
         holder.textSourceLang.text = sourceLang
         holder.textTargetLang.text = targetLang
         
-        holder.textSourcePhrase.text = item.english
-        holder.textTargetPhrase.text = if (currentFilter == "Filipino") item.filipino else item.cuyonon
+        if (currentFilter == "English") {
+            holder.textSourcePhrase.text = item.english
+        } else {
+            holder.textSourcePhrase.text = item.filipino
+        }
+        holder.textTargetPhrase.text = item.cuyonon
 
         holder.btnSpeak.setOnClickListener {
             Toast.makeText(holder.itemView.context, "Speaking: ${holder.textTargetPhrase.text}", Toast.LENGTH_SHORT).show()

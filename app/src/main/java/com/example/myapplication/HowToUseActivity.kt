@@ -41,6 +41,16 @@ class HowToUseActivity : AppCompatActivity() {
                     startActivity(intent)
                     finish()
                 }
+                R.id.nav_basic_phrases -> {
+                    val intent = Intent(this@HowToUseActivity, BasicPhrasesActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+                R.id.nav_history -> {
+                    val intent = Intent(this@HowToUseActivity, HistoryActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
                 R.id.nav_how_to_use -> {
                     // Already here
                 }

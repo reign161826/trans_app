@@ -41,8 +41,10 @@ class BasicPhrasesActivity : AppCompatActivity() {
         spinnerFilter.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val selectedLang = parent?.getItemAtPosition(position).toString()
-                // If English is selected as target, it might be weird but we handle it
-                adapter.updateFilter(selectedLang)
+                // The CSV has: English (0), Filipino (1), Cuyonon (2)
+                // The spinner has: Filipino (0), English (1)
+                val filterLang = if (selectedLang == "Filipino") "Filipino" else "English"
+                adapter.updateFilter(filterLang)
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
@@ -58,7 +60,7 @@ class BasicPhrasesActivity : AppCompatActivity() {
                     finish()
                 }
                 R.id.nav_history -> {
-                    val intent = Intent(this, HistoryActivity::class.java)
+                    val intent = Intent(this@BasicPhrasesActivity, HistoryActivity::class.java)
                     startActivity(intent)
                     finish()
                 }
@@ -66,12 +68,12 @@ class BasicPhrasesActivity : AppCompatActivity() {
                     // Already here
                 }
                 R.id.nav_about -> {
-                    val intent = Intent(this, AboutActivity::class.java)
+                    val intent = Intent(this@BasicPhrasesActivity, AboutActivity::class.java)
                     startActivity(intent)
                     finish()
                 }
                 R.id.nav_how_to_use -> {
-                    val intent = Intent(this, HowToUseActivity::class.java)
+                    val intent = Intent(this@BasicPhrasesActivity, HowToUseActivity::class.java)
                     startActivity(intent)
                     finish()
                 }
@@ -93,18 +95,16 @@ class BasicPhrasesActivity : AppCompatActivity() {
         try {
             val inputStream = assets.open("wordlist.csv")
             val reader = inputStream.bufferedReader()
-            reader.useLines { lines ->
-                lines.forEach { line ->
-                    val tokens = line.split(",")
-                    if (tokens.size >= 3) {
-                        val english = tokens[0].trim()
-                        val filipino = tokens[1].trim()
-                        val cuyonon = tokens[2].trim()
-
-                        if (english != "English") { // Skip header
-                            allPhrases.add(PhraseItem(english, filipino, cuyonon))
-                        }
-                    }
+            val lines = reader.readLines()
+            
+            // Skip header (index 0) and take lines 2 to 30 (indices 1 to 29)
+            for (i in 1 until minOf(lines.size, 30)) {
+                val tokens = lines[i].split(",")
+                if (tokens.size >= 3) {
+                    val english = tokens[0].trim()
+                    val filipino = tokens[1].trim()
+                    val cuyonon = tokens[2].trim()
+                    allPhrases.add(PhraseItem(english, filipino, cuyonon))
                 }
             }
         } catch (e: Exception) {

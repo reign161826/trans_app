@@ -72,7 +72,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@android:color/transparent"
-                android:entries="@array/languages_array"
+                android:entries="@array/phrases_languages_array"
                 android:gravity="center"
                 android:minHeight="0dp"
                 android:paddingEnd="8dp"
