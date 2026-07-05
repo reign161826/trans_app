@@ -30,6 +30,14 @@ class PhrasesAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = phrasesList[position]
+
+        // Set alternating background colors
+        val cardView = holder.itemView as androidx.cardview.widget.CardView
+        if (position % 2 == 0) {
+            cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#D2DCB6"))
+        } else {
+            cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#E2EAD0"))
+        }
         
         val sourceLang = currentFilter
         val targetLang = "Cuyonon"
