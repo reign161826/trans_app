@@ -156,20 +156,9 @@
             android:orientation="horizontal">
 
             <ImageButton
-                android:id="@+id/btnMic"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_circle_outline"
-                android:padding="12dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_mic"
-                app:tint="#4E612C" />
-
-            <ImageButton
                 android:id="@+id/btnCopyInput"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginStart="8dp"
                 android:background="@drawable/bg_circle_outline"
                 android:padding="12dp"
                 android:scaleType="fitCenter"
@@ -211,6 +200,17 @@
             android:orientation="horizontal">
 
             <ImageButton
+                android:id="@+id/btnSpeak"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_circle_outline"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_speak"
+                app:tint="#4E612C" />
+
+            <ImageButton
                 android:id="@+id/btnCopy"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
@@ -246,14 +246,14 @@
             android:contentDescription="@string/scan_text" />
 
         <ImageButton
-            android:id="@+id/btnSpeak"
+            android:id="@+id/btnMic"
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:background="@drawable/bg_green_circle"
-            android:src="@drawable/ic_speak"
+            android:src="@drawable/ic_mic"
             android:padding="20dp"
             android:scaleType="fitCenter"
-            android:contentDescription="Speak Text" />
+            android:contentDescription="Listen" />
 
     </LinearLayout>
 
