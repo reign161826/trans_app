@@ -3,7 +3,7 @@ package com.example.myapplication
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.speech.tts.TextToSpeech
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,11 +11,9 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
-import java.util.Locale
 
 class HistoryAdapter(
     private var historyList: List<HistoryItem>,
-    private val tts: TextToSpeech?,
     private val onItemClick: (HistoryItem) -> Unit
 ) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
 
@@ -24,8 +22,8 @@ class HistoryAdapter(
         val targetLang: TextView = view.findViewById(R.id.text_target_lang)
         val sourceContent: TextView = view.findViewById(R.id.text_source_content)
         val targetContent: TextView = view.findViewById(R.id.text_target_content)
-        val btnSpeak: ImageButton = view.findViewById(R.id.btn_speak_history)
         val btnCopy: ImageButton = view.findViewById(R.id.btn_copy_history)
+        val btnSpeak: ImageButton = view.findViewById(R.id.btn_speak_history)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -49,22 +47,33 @@ class HistoryAdapter(
         holder.targetLang.text = item.targetLang
         holder.sourceContent.text = item.sourceText
         holder.targetContent.text = item.targetText
-        
-        holder.btnSpeak.setOnClickListener {
-            val locale = when (item.targetLang) {
-                "English" -> Locale.US
-                "Filipino" -> Locale("fil", "PH")
-                else -> Locale.US
-            }
-            tts?.language = locale
-            tts?.speak(item.targetText, TextToSpeech.QUEUE_FLUSH, null, null)
-        }
 
         holder.btnCopy.setOnClickListener {
             val clipboard = holder.itemView.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("Translated Text", item.targetText)
             clipboard.setPrimaryClip(clip)
             Toast.makeText(holder.itemView.context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+        }
+
+        holder.btnSpeak.setOnClickListener {
+            // Copy the text
+            val context = holder.itemView.context
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Translated Text", item.targetText)
+            clipboard.setPrimaryClip(clip)
+            
+            // Go to home page and put text to second box
+            val intent = Intent(context, MainActivity::class.java).apply {
+                putExtra("sourceText", item.sourceText)
+                putExtra("targetText", item.targetText)
+                putExtra("sourceLang", item.sourceLang)
+                putExtra("targetLang", item.targetLang)
+                flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            context.startActivity(intent)
+            if (context is android.app.Activity) {
+                context.finish()
+            }
         }
 
         holder.itemView.setOnClickListener {

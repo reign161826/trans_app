@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private val handler = Handler(Looper.getMainLooper())
     private var translationRunnable: Runnable? = null
+    private var hideSuggestionRunnable: Runnable? = null
 
     private var cuyononDictionary = mutableMapOf<String, String>()
     private var filipinoToCuyonon = mutableMapOf<String, String>()
@@ -101,10 +102,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     }
                 }
                 
-                // Re-translate if there's text
-                val text = inputText.text.toString().trim()
-                if (text.isNotEmpty()) {
-                    performTranslation(text)
+                // Re-translate and update suggestions if there's text
+                val text = inputText.text.toString()
+                if (text.trim().isNotEmpty()) {
+                    performTranslation(text.trim())
+                    updateSuggestion(text)
                 }
             }
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
@@ -124,11 +126,37 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         outputText = findViewById(R.id.outputText)
         suggestionText = findViewById(R.id.suggestionText)
 
+        // Hide suggestion when focus is lost
+        inputText.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) suggestionText.text = ""
+        }
+
+        // Accept suggestion when tapping the input area
+        inputText.setOnTouchListener { _, event ->
+            if (event.action == android.view.MotionEvent.ACTION_UP) {
+                val suggestion = suggestionText.text.toString()
+                if (suggestion.isNotEmpty() && suggestion.length > inputText.text.length) {
+                    inputText.setText(suggestion)
+                    inputText.setSelection(suggestion.length)
+                    suggestionText.text = ""
+                    return@setOnTouchListener true
+                }
+            }
+            false
+        }
+
         inputText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val text = s.toString()
                 updateSuggestion(text)
+
+                // Hide suggestion if user stops typing (shorter 1.5s timeout)
+                hideSuggestionRunnable?.let { handler.removeCallbacks(it) }
+                hideSuggestionRunnable = Runnable {
+                    suggestionText.text = ""
+                }
+                handler.postDelayed(hideSuggestionRunnable!!, 1500)
 
                 translationRunnable?.let { handler.removeCallbacks(it) }
                 translationRunnable = Runnable {
@@ -145,7 +173,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         })
 
         val btnScan: ImageButton = findViewById(R.id.btnScan)
-        val btnHistory: ImageButton = findViewById(R.id.btnHistory)
         val btnSpeak: ImageButton = findViewById(R.id.btnSpeak)
         val btnCopy: ImageButton = findViewById(R.id.btnCopy)
         val btnMic: ImageButton = findViewById(R.id.btnMic)
@@ -153,11 +180,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         btnScan.setOnClickListener {
             checkCameraPermissionAndScan()
-        }
-
-        btnHistory.setOnClickListener {
-            val intent = Intent(this, HistoryActivity::class.java)
-            startActivity(intent)
         }
 
         btnSpeak.setOnClickListener {
@@ -424,10 +446,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
         val lowerText = text.lowercase()
+        // Find the first word/phrase that starts with the input but isn't identical
         val suggestion = wordList.find { it.startsWith(lowerText) && it != lowerText }
 
         if (suggestion != null) {
-            // Match the case of the input
+            // Match the case: use the user's typed text + the remaining part of the suggestion
             val result = text + suggestion.substring(text.length)
             suggestionText.text = result
         } else {
