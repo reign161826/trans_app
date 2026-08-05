@@ -27,9 +27,8 @@
 
             <TextView
                 android:id="@+id/text_source_lang"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:fontFamily="sans-serif-medium"
                 android:gravity="center"
                 android:text="English"
@@ -38,16 +37,18 @@
                 android:textStyle="bold"
                 android:textAllCaps="true"/>
 
-            <View
-                android:layout_width="24dp"
-                android:layout_height="1dp"
-                android:layout_marginHorizontal="8dp" />
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginHorizontal="12dp"
+                android:src="@drawable/ic_arrow_forward"
+                android:contentDescription="@null"
+                app:tint="#4E612C" />
 
             <TextView
                 android:id="@+id/text_target_lang"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:fontFamily="sans-serif-medium"
                 android:gravity="center"
                 android:text="Cuyonon"
@@ -58,89 +59,53 @@
 
         </LinearLayout>
 
-        <!-- Phrases Row -->
-        <LinearLayout
-            android:id="@+id/layout_phrases"
+        <!-- Source Phrase -->
+        <TextView
+            android:id="@+id/text_source_phrase"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:fontFamily="sans-serif"
+            android:gravity="center"
+            android:lineSpacingExtra="2sp"
+            android:text="how much"
+            android:textColor="#3A3838"
+            android:textSize="17sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layout_languages" />
+
+        <!-- Vertical Arrow -->
+        <ImageView
+            android:id="@+id/icon_arrow_down"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginVertical="8dp"
+            android:rotation="90"
+            android:src="@drawable/ic_arrow_forward"
+            android:contentDescription="@null"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_source_phrase"
+            app:tint="#4E612C" />
+
+        <!-- Target Phrase -->
+        <TextView
+            android:id="@+id/text_target_phrase"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_languages">
-
-            <TextView
-                android:id="@+id/text_source_phrase"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="sans-serif"
-                android:gravity="center"
-                android:lineSpacingExtra="2sp"
-                android:text="how much"
-                android:textColor="#3A3838"
-                android:textSize="17sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
-                android:text="→"
-                android:textColor="#4E612C"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/text_target_phrase"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="sans-serif"
-                android:gravity="center"
-                android:lineSpacingExtra="2sp"
-                android:text="Tag pira"
-                android:textColor="#3A3838"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
-        <!-- Action Buttons -->
-        <LinearLayout
-            android:id="@+id/layout_actions"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
+            android:fontFamily="sans-serif"
+            android:gravity="center"
+            android:lineSpacingExtra="2sp"
+            android:text="Tag pira"
+            android:textColor="#3A3838"
+            android:textSize="17sp"
+            android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_phrases">
-
-            <ImageButton
-                android:id="@+id/btn_speak"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/bg_circle_outline"
-                android:contentDescription="Speak"
-                android:padding="8dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_speak"
-                app:tint="#4E612C" />
-
-            <ImageButton
-                android:id="@+id/btn_copy"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="@drawable/bg_circle_outline"
-                android:contentDescription="Copy"
-                android:padding="8dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_copy"
-                app:tint="#4E612C" />
-
-        </LinearLayout>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/icon_arrow_down" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -8,113 +8,60 @@
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="20dp">
 
-        <LinearLayout
-            android:id="@+id/layout_languages"
+        <!-- Source Section -->
+        <TextView
+            android:id="@+id/text_source_lang"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            android:text="English"
+            android:textColor="#4E612C"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textAllCaps="false" />
 
-            <TextView
-                android:id="@+id/text_source_lang"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="English"
-                android:textColor="#4E612C"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+        <TextView
+            android:id="@+id/text_source_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="how much"
+            android:textColor="#3A3838"
+            android:textSize="18sp" />
 
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginHorizontal="12dp"
-                android:src="@drawable/ic_arrow_forward"
-                app:tint="#4E612C" />
+        <!-- Divider Line -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="#A8B48C" />
 
-            <TextView
-                android:id="@+id/text_target_lang"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Filipino"
-                android:textColor="#4E612C"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_content"
+        <!-- Target Section -->
+        <TextView
+            android:id="@+id/text_target_lang"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_languages">
+            android:text="Filipino"
+            android:textColor="#4E612C"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textAllCaps="false" />
 
-            <TextView
-                android:id="@+id/text_source_content"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="how much"
-                android:textColor="#4E612C"
-                android:textSize="18sp" />
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginHorizontal="12dp"
-                android:src="@drawable/ic_arrow_forward"
-                app:tint="#4E612C" />
-
-            <TextView
-                android:id="@+id/text_target_content"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="magkano?"
-                android:textColor="#4E612C"
-                android:textSize="18sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/text_target_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_content">
+            android:layout_marginTop="4dp"
+            android:text="magkano?"
+            android:textColor="#4E612C"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-            <ImageButton
-                android:id="@+id/btn_speak_history"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/bg_circle_outline"
-                android:padding="9dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_speak"
-                app:tint="#4E612C" />
-
-            <ImageButton
-                android:id="@+id/btn_copy_history"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="@drawable/bg_circle_outline"
-                android:padding="9dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_copy"
-                app:tint="#4E612C" />
-
-        </LinearLayout>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 </androidx.cardview.widget.CardView>

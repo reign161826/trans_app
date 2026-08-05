@@ -59,6 +59,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private val handler = Handler(Looper.getMainLooper())
     private var translationRunnable: Runnable? = null
     private var hideSuggestionRunnable: Runnable? = null
+    private var isDialogShowing = false
 
     private var cuyononDictionary = mutableMapOf<String, String>()
     private var filipinoToCuyonon = mutableMapOf<String, String>()
@@ -162,18 +163,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 translationRunnable = Runnable {
                     val trimmedText = text.trim()
                     if (trimmedText.isNotEmpty()) {
-                        performTranslation(trimmedText)
+                        performTranslation(trimmedText, isManualTrigger = false)
                     } else {
                         outputText.text = ""
                     }
                 }
-                handler.postDelayed(translationRunnable!!, 1000) // 1 second debounce
+                handler.postDelayed(translationRunnable!!, 1500) // Increased debounce for auto-translation
             }
             override fun afterTextChanged(s: Editable?) {}
         })
 
         val btnScan: ImageButton = findViewById(R.id.btnScan)
         val btnSpeak: ImageButton = findViewById(R.id.btnSpeak)
+        val btnSpeakInput: ImageButton = findViewById(R.id.btnSpeakInput)
         val btnCopy: ImageButton = findViewById(R.id.btnCopy)
         val btnMic: ImageButton = findViewById(R.id.btnMic)
         val btnCopyInput: ImageButton = findViewById(R.id.btnCopyInput)
@@ -185,10 +187,21 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         btnSpeak.setOnClickListener {
             val text = outputText.text.toString()
             if (text.isNotEmpty() && text != "Translated text here...") {
-                speakText(text)
+                speakText(text, isTarget = true)
                 btnSpeak.setImageResource(R.drawable.ic_speak_active)
                 handler.postDelayed({
                     btnSpeak.setImageResource(R.drawable.ic_speak)
+                }, 2000)
+            }
+        }
+
+        btnSpeakInput.setOnClickListener {
+            val text = inputText.text.toString()
+            if (text.isNotEmpty()) {
+                speakText(text, isTarget = false)
+                btnSpeakInput.setImageResource(R.drawable.ic_speak_active)
+                handler.postDelayed({
+                    btnSpeakInput.setImageResource(R.drawable.ic_speak)
                 }, 2000)
             }
         }
@@ -342,6 +355,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             if (!result.isNullOrEmpty()) {
                 inputText.setText(result[0])
+                performTranslation(result[0], isManualTrigger = true)
             }
         } else if (requestCode == CAMERA_REQUEST_CODE && resultCode == RESULT_OK) {
             photoFile?.let {
@@ -360,7 +374,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 val resultText = visionText.text
                 if (resultText.isNotEmpty()) {
                     inputText.setText(resultText)
-                    performTranslation(resultText)
+                    performTranslation(resultText, isManualTrigger = true)
                 } else {
                     Toast.makeText(this, "No text found in image", Toast.LENGTH_SHORT).show()
                 }
@@ -370,9 +384,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
     }
 
-    private fun speakText(text: String) {
-        val targetLang = spinnerTarget.selectedItem.toString()
-        val locale = when (targetLang) {
+    private fun speakText(text: String, isTarget: Boolean = true) {
+        val lang = if (isTarget) spinnerTarget.selectedItem.toString() else spinnerSource.selectedItem.toString()
+        val locale = when (lang) {
             "English" -> Locale.US
             "Filipino" -> Locale("fil", "PH")
             else -> Locale.US
@@ -422,13 +436,128 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    private fun performTranslation(text: String) {
+    private fun performTranslation(text: String, isManualTrigger: Boolean = true) {
         val sourceLang = spinnerSource.selectedItem.toString()
         val targetLang = spinnerTarget.selectedItem.toString()
         
+        // Auto-correct / Add word logic for single words
+        val trimmed = text.trim()
+        val suggestion = suggestionText.text.toString()
+        
+        // Only show dialogs if it's a single word, not already covered by an autocomplete suggestion,
+        // and if it's either a manual trigger (like clicking a list item) or a long enough pause.
+        if (trimmed.isNotEmpty() && !trimmed.contains(" ") && !isDialogShowing && suggestion.isEmpty()) {
+            val lower = trimmed.lowercase()
+            val wordList = when (sourceLang) {
+                "English" -> englishWords
+                "Filipino" -> filipinoWords
+                "Cuyonon" -> cuyononWords
+                else -> emptySet()
+            }
+
+            if (!wordList.contains(lower)) {
+                val closest = findClosestWord(lower, wordList)
+                if (closest != null) {
+                    showCorrectionDialog(lower, closest, sourceLang)
+                } else if (isManualTrigger) {
+                    // Only show "Add to Dictionary" if the user has definitely finished or triggered it
+                    showAddWordDialog(lower, sourceLang)
+                }
+            }
+        }
+
         val translated = translateOffline(text, sourceLang, targetLang)
         outputText.text = translated
         saveToHistory(text, translated)
+    }
+
+    private fun calculateLevenshteinDistance(s1: String, s2: String): Int {
+        val m = s1.length
+        val n = s2.length
+        val dp = Array(m + 1) { IntArray(n + 1) }
+        for (i in 0..m) dp[i][0] = i
+        for (j in 0..n) dp[0][j] = j
+        for (i in 1..m) {
+            for (j in 1..n) {
+                val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
+                dp[i][j] = minOf(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost)
+            }
+        }
+        return dp[m][n]
+    }
+
+    private fun findClosestWord(word: String, wordList: Set<String>): String? {
+        if (wordList.isEmpty()) return null
+        var closest: String? = null
+        var minDistance = Int.MAX_VALUE
+        for (w in wordList) {
+            val distance = calculateLevenshteinDistance(word, w)
+            if (distance < minDistance) {
+                minDistance = distance
+                closest = w
+            }
+        }
+        return if (minDistance > 0 && minDistance <= 2) closest else null
+    }
+
+    private fun showCorrectionDialog(wrongWord: String, suggestion: String, lang: String) {
+        if (isFinishing || isDestroyed) return
+        isDialogShowing = true
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Typo Detected")
+            .setMessage("It looks like you typed '$wrongWord'. Did you mean '$suggestion'?")
+            .setPositiveButton("Yes, use '$suggestion'") { _, _ ->
+                inputText.setText(suggestion)
+                inputText.setSelection(suggestion.length)
+                isDialogShowing = false
+            }
+            .setNegativeButton("No, suggest '$wrongWord'") { _, _ ->
+                isDialogShowing = false
+                showAddWordDialog(wrongWord, lang)
+            }
+            .setNeutralButton("Ignore") { _, _ -> isDialogShowing = false }
+            .setOnDismissListener { isDialogShowing = false }
+            .show()
+    }
+
+    private fun showAddWordDialog(word: String, lang: String) {
+        if (isFinishing || isDestroyed) return
+        isDialogShowing = true
+        val targetLang = spinnerTarget.selectedItem.toString()
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Suggest to Developer")
+            .setMessage("'$word' is not in our wordlist. Would you like to suggest this word to the developer? We will review it and find the $targetLang translation for a future update.")
+            .setPositiveButton("Suggest Word") { _, _ ->
+                sendWordToDeveloper(lang, targetLang, word)
+                Toast.makeText(this, "Suggestion sent for review", Toast.LENGTH_SHORT).show()
+                isDialogShowing = false
+            }
+            .setNegativeButton("Cancel") { _, _ -> isDialogShowing = false }
+            .setOnDismissListener { isDialogShowing = false }
+            .show()
+    }
+
+    private fun sendWordToDeveloper(sourceLang: String, targetLang: String, word: String) {
+        val subject = "New Word Suggestion: $word"
+        val body = "The user has suggested a new word for the dictionary:\n\n" +
+                "Source Language: $sourceLang\n" +
+                "Target Language: $targetLang\n" +
+                "Word: $word\n\n" +
+                "Please review and find the appropriate translation for the official wordlist."
+
+        val intent = Intent(Intent.ACTION_SENDTO).apply {
+            data = Uri.parse("mailto:")
+            putExtra(Intent.EXTRA_EMAIL, arrayOf("correareign@gmail.com"))
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(Intent.EXTRA_TEXT, body)
+        }
+
+        try {
+            startActivity(Intent.createChooser(intent, "Send suggestion to developer..."))
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not open email app", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun updateSuggestion(text: String) {

@@ -19,6 +19,7 @@ class HistoryActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: HistoryAdapter
     private lateinit var emptyText: TextView
+    private lateinit var btnDeleteAll: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +33,7 @@ class HistoryActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recycler_view_history)
         emptyText = findViewById(R.id.text_empty_history)
+        btnDeleteAll = findViewById(R.id.btn_delete_all)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = HistoryAdapter(emptyList()) { item ->
@@ -47,7 +49,6 @@ class HistoryActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
 
-        val btnDeleteAll: TextView = findViewById(R.id.btn_delete_all)
         btnDeleteAll.setOnClickListener {
             clearHistory()
         }
@@ -94,14 +95,14 @@ class HistoryActivity : AppCompatActivity() {
         val historyList = mutableListOf<HistoryItem>()
 
         for (i in 0 until historyArray.length()) {
-            val obj = historyArray.getJSONObject(i)
+            val obj = historyArray.optJSONObject(i) ?: continue
             historyList.add(
                 HistoryItem(
-                    obj.getString("sourceText"),
-                    obj.getString("targetText"),
-                    obj.getString("sourceLang"),
-                    obj.getString("targetLang"),
-                    obj.getLong("timestamp")
+                    obj.optString("sourceText", ""),
+                    obj.optString("targetText", ""),
+                    obj.optString("sourceLang", "English"),
+                    obj.optString("targetLang", "Filipino"),
+                    obj.optLong("timestamp", System.currentTimeMillis())
                 )
             )
         }
@@ -109,9 +110,11 @@ class HistoryActivity : AppCompatActivity() {
         if (historyList.isEmpty()) {
             emptyText.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
+            btnDeleteAll.visibility = View.GONE
         } else {
             emptyText.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
+            btnDeleteAll.visibility = View.VISIBLE
             adapter.updateData(historyList)
         }
     }

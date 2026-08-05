@@ -11,13 +11,13 @@
     <LinearLayout
         android:id="@+id/headerLayout"
         android:layout_width="0dp"
-        android:layout_height="120dp"
+        android:layout_height="100dp"
         android:background="#9CAB84"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="4dp"
         android:paddingEnd="20dp"
-        android:paddingTop="32dp"
+        android:paddingTop="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -129,7 +129,7 @@
             android:background="@android:color/transparent"
             android:gravity="top"
             android:padding="20dp"
-            android:textColor="#BDBDBD"
+            android:textColor="#A5A5A5"
             android:textSize="18sp"
             android:visibility="visible" />
 
@@ -154,6 +154,18 @@
             android:layout_margin="12dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnSpeakInput"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_circle_outline"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_speak"
+                android:contentDescription="Speak input"
+                app:tint="#4E612C" />
 
             <ImageButton
                 android:id="@+id/btnCopyInput"

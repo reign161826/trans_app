@@ -22,8 +22,6 @@ class PhrasesAdapter(
         val textTargetLang: TextView = view.findViewById(R.id.text_target_lang)
         val textSourcePhrase: TextView = view.findViewById(R.id.text_source_phrase)
         val textTargetPhrase: TextView = view.findViewById(R.id.text_target_phrase)
-        val btnCopy: ImageButton = view.findViewById(R.id.btn_copy)
-        val btnSpeak: ImageButton = view.findViewById(R.id.btn_speak)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -56,22 +54,10 @@ class PhrasesAdapter(
         }
         holder.textTargetPhrase.text = item.cuyonon
 
-        holder.btnCopy.setOnClickListener {
-            val clipboard = holder.itemView.context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-            val clip = android.content.ClipData.newPlainText("Translated Phrase", holder.textTargetPhrase.text)
-            clipboard.setPrimaryClip(clip)
-            Toast.makeText(holder.itemView.context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
-        }
-
-        holder.btnSpeak.setOnClickListener {
+        holder.itemView.setOnClickListener {
             val context = holder.itemView.context
             val targetText = holder.textTargetPhrase.text.toString()
             val sourceText = holder.textSourcePhrase.text.toString()
-            
-            // Copy the text
-            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Translated Phrase", targetText)
-            clipboard.setPrimaryClip(clip)
             
             // Go to home page and put text to second box
             val intent = Intent(context, MainActivity::class.java).apply {
