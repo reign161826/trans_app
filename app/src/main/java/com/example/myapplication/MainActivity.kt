@@ -32,6 +32,8 @@ import com.google.android.material.navigation.NavigationView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -73,6 +75,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setContentView(R.layout.activity_main_drawer)
 
         loadDictionaryFromCsv()
+        listenToVerifiedWords()
 
         drawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)
@@ -444,25 +447,30 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val trimmed = text.trim()
         val suggestion = suggestionText.text.toString()
         
+        val lower = trimmed.lowercase()
+        val wordList = when (sourceLang) {
+            "English" -> englishWords
+            "Filipino" -> filipinoWords
+            "Cuyonon" -> cuyononWords
+            else -> emptySet()
+        }
+
+        if (wordList.contains(lower)) {
+            val translated = translateOffline(text, sourceLang, targetLang)
+            outputText.text = translated
+            saveToHistory(text, translated)
+            return
+        }
+
         // Only show dialogs if it's a single word, not already covered by an autocomplete suggestion,
         // and if it's either a manual trigger (like clicking a list item) or a long enough pause.
         if (trimmed.isNotEmpty() && !trimmed.contains(" ") && !isDialogShowing && suggestion.isEmpty()) {
-            val lower = trimmed.lowercase()
-            val wordList = when (sourceLang) {
-                "English" -> englishWords
-                "Filipino" -> filipinoWords
-                "Cuyonon" -> cuyononWords
-                else -> emptySet()
-            }
-
-            if (!wordList.contains(lower)) {
-                val closest = findClosestWord(lower, wordList)
-                if (closest != null) {
-                    showCorrectionDialog(lower, closest, sourceLang)
-                } else if (isManualTrigger) {
-                    // Only show "Add to Dictionary" if the user has definitely finished or triggered it
-                    showAddWordDialog(lower, sourceLang)
-                }
+            val closest = findClosestWord(lower, wordList)
+            if (closest != null) {
+                showCorrectionDialog(lower, closest, sourceLang)
+            } else if (isManualTrigger) {
+                // Only show "Add to Dictionary" if the user has definitely finished or triggered it
+                showAddWordDialog(lower, sourceLang)
             }
         }
 
@@ -523,13 +531,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun showAddWordDialog(word: String, lang: String) {
         if (isFinishing || isDestroyed) return
         isDialogShowing = true
-        val targetLang = spinnerTarget.selectedItem.toString()
 
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Suggest to Developer")
-            .setMessage("'$word' is not in our wordlist. Would you like to suggest this word to the developer? We will review it and find the $targetLang translation for a future update.")
+            .setMessage("'$word' is not in our wordlist. Would you like to suggest this word to the developer? We will review it and add translations for it in a future update.")
             .setPositiveButton("Suggest Word") { _, _ ->
-                sendWordToDeveloper(lang, targetLang, word)
+                sendWordToDeveloper(lang, word)
                 Toast.makeText(this, "Suggestion sent for review", Toast.LENGTH_SHORT).show()
                 isDialogShowing = false
             }
@@ -538,26 +545,23 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .show()
     }
 
-    private fun sendWordToDeveloper(sourceLang: String, targetLang: String, word: String) {
-        val subject = "New Word Suggestion: $word"
-        val body = "The user has suggested a new word for the dictionary:\n\n" +
-                "Source Language: $sourceLang\n" +
-                "Target Language: $targetLang\n" +
-                "Word: $word\n\n" +
-                "Please review and find the appropriate translation for the official wordlist."
+    private fun sendWordToDeveloper(sourceLang: String, word: String) {
+        val db = Firebase.firestore
+        val suggestion = hashMapOf(
+            "sourceLang" to sourceLang,
+            "word" to word.trim(),
+            "timestamp" to System.currentTimeMillis(),
+            "status" to "pending"
+        )
 
-        val intent = Intent(Intent.ACTION_SENDTO).apply {
-            data = Uri.parse("mailto:")
-            putExtra(Intent.EXTRA_EMAIL, arrayOf("correareign@gmail.com"))
-            putExtra(Intent.EXTRA_SUBJECT, subject)
-            putExtra(Intent.EXTRA_TEXT, body)
-        }
-
-        try {
-            startActivity(Intent.createChooser(intent, "Send suggestion to developer..."))
-        } catch (e: Exception) {
-            Toast.makeText(this, "Could not open email app", Toast.LENGTH_SHORT).show()
-        }
+        db.collection("suggestions")
+            .add(suggestion)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Success! '$word' sent to Moderator.", Toast.LENGTH_LONG).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Connection Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
     }
 
     private fun updateSuggestion(text: String) {
@@ -615,6 +619,44 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun listenToVerifiedWords() {
+        val db = Firebase.firestore
+        db.collection("verified_words").addSnapshotListener { snapshots, e ->
+            if (e != null) return@addSnapshotListener
+            
+            snapshots?.forEach { doc ->
+                val word = doc.getString("word")?.lowercase()?.trim() ?: ""
+                val sourceLang = doc.getString("sourceLang") ?: ""
+                val t1 = doc.getString("translation1")?.trim() ?: ""
+                val t2 = doc.getString("translation2")?.trim() ?: ""
+                
+                if (word.isNotEmpty()) {
+                    when (sourceLang) {
+                        "English" -> {
+                            englishWords.add(word)
+                            if (t2.isNotEmpty()) cuyononDictionary[word] = t2 // Cuyonon is t2 for English
+                            // If we had an English-to-Filipino map, we'd put t1 there
+                        }
+                        "Filipino" -> {
+                            filipinoWords.add(word)
+                            if (t2.isNotEmpty()) filipinoToCuyonon[word] = t2 // Cuyonon is t2 for Filipino
+                        }
+                        "Cuyonon" -> {
+                            cuyononWords.add(word)
+                            if (t1.isNotEmpty()) {
+                                // Add to a reverse map if needed, 
+                                // currently translateOffline handles Cuyonon via reverse lookup of English/Filipino maps
+                                // So we should actually add the translations to the primary maps
+                                cuyononDictionary[t1] = word // t1 is English
+                                filipinoToCuyonon[t2] = word // t2 is Filipino
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -713,6 +755,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun saveToHistory(source: String, target: String) {
+        if (source.isBlank() || target.isBlank() || target == "Translated text here...") return
+
         val prefs = getSharedPreferences("translation_history", MODE_PRIVATE)
         val historyJson = prefs.getString("history_list", "[]")
         val historyArray = JSONArray(historyJson)

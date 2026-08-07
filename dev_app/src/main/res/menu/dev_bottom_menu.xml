@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_suggestions"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="Suggestions" />
+    <item
+        android:id="@+id/menu_dictionary"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Dictionary" />
+</menu>

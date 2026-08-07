@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "1010809172097",
+    "firebase_url": "https://ph-translation-app-default-rtdb.firebaseio.com",
+    "project_id": "ph-translation-app",
+    "storage_bucket": "ph-translation-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1010809172097:android:f6407c7f4169eb7945dd80",
+        "android_client_info": {
+          "package_name": "com.example.devapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSRRuJ_7_l1mCWGWFaFv2z9yPGVqpQ_-I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1010809172097:android:c78134fb2472f62645dd80",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSRRuJ_7_l1mCWGWFaFv2z9yPGVqpQ_-I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
