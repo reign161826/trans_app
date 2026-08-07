@@ -3,65 +3,128 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="16dp"
+    android:layout_marginBottom="12dp"
+    android:layout_marginHorizontal="16dp"
     app:cardBackgroundColor="#D2DCB6"
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
-        <!-- Source Section -->
-        <TextView
-            android:id="@+id/text_source_lang"
+        <!-- Language Header -->
+        <LinearLayout
+            android:id="@+id/layout_langs"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="English"
-            android:textColor="#4E612C"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textAllCaps="false" />
+            android:orientation="horizontal"
+            android:gravity="center"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/text_source_content"
+            <TextView
+                android:id="@+id/text_source_lang"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="English"
+                android:textColor="#4E612C"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="  →  "
+                android:textColor="#4E612C"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_target_lang"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cuyonon"
+                android:textColor="#4E612C"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Content Row -->
+        <LinearLayout
+            android:id="@+id/layout_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="how much"
-            android:textColor="#3A3838"
-            android:textSize="18sp" />
+            android:orientation="horizontal"
+            android:gravity="top|center_horizontal"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_langs"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Divider Line -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"
-            android:background="#A8B48C" />
+            <TextView
+                android:id="@+id/text_source_content"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:text="how much"
+                android:textColor="#3A3838"
+                android:textSize="16sp" />
 
-        <!-- Target Section -->
-        <TextView
-            android:id="@+id/text_target_lang"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="  →  "
+                android:textColor="#3A3838"
+                android:textSize="16sp"
+                android:layout_marginHorizontal="4dp"/>
+
+            <TextView
+                android:id="@+id/text_target_content"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="start"
+                android:text="tag pira"
+                android:textColor="#4E612C"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:id="@+id/layout_actions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Filipino"
-            android:textColor="#4E612C"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textAllCaps="false" />
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
 
-        <TextView
-            android:id="@+id/text_target_content"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="magkano?"
-            android:textColor="#4E612C"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            <ImageButton
+                android:id="@+id/btn_speak"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_circle_outline"
+                android:src="@drawable/ic_speak"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Speak translation" />
 
-    </LinearLayout>
+            <ImageButton
+                android:id="@+id/btn_copy"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_circle_outline"
+                android:src="@drawable/ic_copy"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:contentDescription="Copy translation" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

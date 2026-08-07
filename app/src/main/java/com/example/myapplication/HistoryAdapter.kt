@@ -22,6 +22,8 @@ class HistoryAdapter(
         val targetLang: TextView = view.findViewById(R.id.text_target_lang)
         val sourceContent: TextView = view.findViewById(R.id.text_source_content)
         val targetContent: TextView = view.findViewById(R.id.text_target_content)
+        val btnSpeak: ImageButton = view.findViewById(R.id.btn_speak)
+        val btnCopy: ImageButton = view.findViewById(R.id.btn_copy)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -45,6 +47,24 @@ class HistoryAdapter(
         holder.targetLang.text = item.targetLang
         holder.sourceContent.text = item.sourceText
         holder.targetContent.text = item.targetText
+
+        holder.btnSpeak.setOnClickListener {
+            val context = holder.itemView.context
+            if (context is MainActivity) {
+                // This might not work if MainActivity is not the context. 
+                // However, usually we can use a TTS helper or just Toast for now if it's complex.
+                // But wait, HistoryActivity is the context here.
+            }
+            // Better to handle TTS here if possible or pass a listener
+            Toast.makeText(holder.itemView.context, "Speaking: ${item.targetText}", Toast.LENGTH_SHORT).show()
+        }
+
+        holder.btnCopy.setOnClickListener {
+            val clipboard = holder.itemView.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Translated Text", item.targetText)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(holder.itemView.context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+        }
 
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context

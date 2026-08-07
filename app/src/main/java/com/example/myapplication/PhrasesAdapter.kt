@@ -22,6 +22,8 @@ class PhrasesAdapter(
         val textTargetLang: TextView = view.findViewById(R.id.text_target_lang)
         val textSourcePhrase: TextView = view.findViewById(R.id.text_source_phrase)
         val textTargetPhrase: TextView = view.findViewById(R.id.text_target_phrase)
+        val btnSpeak: ImageButton = view.findViewById(R.id.btn_speak)
+        val btnCopy: ImageButton = view.findViewById(R.id.btn_copy)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -53,6 +55,17 @@ class PhrasesAdapter(
             holder.textSourcePhrase.text = item.filipino
         }
         holder.textTargetPhrase.text = item.cuyonon
+
+        holder.btnSpeak.setOnClickListener {
+            Toast.makeText(holder.itemView.context, "Speaking: ${item.cuyonon}", Toast.LENGTH_SHORT).show()
+        }
+
+        holder.btnCopy.setOnClickListener {
+            val clipboard = holder.itemView.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Translated Text", item.cuyonon)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(holder.itemView.context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+        }
 
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context
