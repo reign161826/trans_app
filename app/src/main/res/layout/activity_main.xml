@@ -144,7 +144,8 @@
             android:textColor="#4E5B2E"
             android:textColorHint="#9CAB84"
             android:textSize="18sp"
-            android:inputType="textNoSuggestions" />
+            android:inputType="textNoSuggestions"
+            android:imeOptions="actionDone" />
 
         <LinearLayout
             android:layout_width="wrap_content"

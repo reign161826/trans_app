@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="#F6F0D7"
+    app:cardCornerRadius="28dp"
+    app:cardElevation="8dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Header Area (Sage Green) -->
+        <View
+            android:id="@+id/header_bg"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:background="#9CAB84"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/dialog_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:text="Suggest to Dictionary"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/header_bg"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/header_bg" />
+
+        <ImageButton
+            android:id="@+id/btn_close_dialog"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:layout_constraintBottom_toBottomOf="@id/header_bg"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/header_bg"
+            app:tint="#FFFFFF" />
+
+        <!-- Content Area -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            app:layout_constraintTop_toBottomOf="@id/header_bg">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="It's not in our database. Would you like to us to add it in the database?"
+                android:textColor="#4E612C"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp" />
+
+            <EditText
+                android:id="@+id/edit_word"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Word to add"
+                android:padding="12dp"
+                android:background="@drawable/box_background"
+                android:textColor="#3A3838"
+                android:layout_marginBottom="12dp" />
+
+            <EditText
+                android:id="@+id/edit_translation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Translation"
+                android:padding="12dp"
+                android:background="@drawable/box_background"
+                android:textColor="#3A3838"
+                android:layout_marginBottom="12dp" />
+
+            <EditText
+                android:id="@+id/edit_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Description (optional)"
+                android:padding="12dp"
+                android:background="@drawable/box_background"
+                android:textColor="#3A3838"
+                android:gravity="top"
+                android:minLines="3"
+                android:layout_marginBottom="20dp" />
+
+            <Button
+                android:id="@+id/btn_submit_suggestion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Submit Suggestion"
+                android:backgroundTint="#4E612C"
+                android:textColor="#FFFFFF" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

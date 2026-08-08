@@ -176,6 +176,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             override fun afterTextChanged(s: Editable?) {}
         })
 
+        inputText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                val text = inputText.text.toString().trim()
+                if (text.isNotEmpty()) {
+                    performTranslation(text, isManualTrigger = true)
+                }
+                true
+            } else {
+                false
+            }
+        }
+
         val btnScan: ImageButton = findViewById(R.id.btnScan)
         val btnSpeak: ImageButton = findViewById(R.id.btnSpeak)
         val btnSpeakInput: ImageButton = findViewById(R.id.btnSpeakInput)
@@ -532,24 +544,50 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (isFinishing || isDestroyed) return
         isDialogShowing = true
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Suggest to Developer")
-            .setMessage("'$word' is not in our wordlist. Would you like to suggest this word to the developer? We will review it and add translations for it in a future update.")
-            .setPositiveButton("Suggest Word") { _, _ ->
-                sendWordToDeveloper(lang, word)
-                Toast.makeText(this, "Suggestion sent for review", Toast.LENGTH_SHORT).show()
-                isDialogShowing = false
+        val dialog = android.app.Dialog(this)
+        dialog.setContentView(R.layout.dialog_suggest_word)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val width = (resources.displayMetrics.widthPixels * 0.90).toInt()
+        dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+
+        val editWord = dialog.findViewById<EditText>(R.id.edit_word)
+        val editTranslation = dialog.findViewById<EditText>(R.id.edit_translation)
+        val editDescription = dialog.findViewById<EditText>(R.id.edit_description)
+        val btnSubmit = dialog.findViewById<android.widget.Button>(R.id.btn_submit_suggestion)
+        val btnClose = dialog.findViewById<ImageButton>(R.id.btn_close_dialog)
+
+        editWord.setText(word)
+
+        btnSubmit.setOnClickListener {
+            val suggestedWord = editWord.text.toString().trim()
+            val translation = editTranslation.text.toString().trim()
+            val description = editDescription.text.toString().trim()
+
+            if (suggestedWord.isEmpty() || translation.isEmpty()) {
+                Toast.makeText(this, "Please fill in the word and translation", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-            .setNegativeButton("Cancel") { _, _ -> isDialogShowing = false }
-            .setOnDismissListener { isDialogShowing = false }
-            .show()
+
+            sendWordToDeveloper(lang, suggestedWord, translation, description)
+            dialog.dismiss()
+        }
+
+        btnClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.setOnDismissListener { isDialogShowing = false }
+        dialog.show()
     }
 
-    private fun sendWordToDeveloper(sourceLang: String, word: String) {
+    private fun sendWordToDeveloper(sourceLang: String, word: String, translation: String, description: String) {
         val db = Firebase.firestore
         val suggestion = hashMapOf(
             "sourceLang" to sourceLang,
             "word" to word.trim(),
+            "translation" to translation,
+            "description" to description,
             "timestamp" to System.currentTimeMillis(),
             "status" to "pending"
         )
