@@ -480,8 +480,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val closest = findClosestWord(lower, wordList)
             if (closest != null) {
                 showCorrectionDialog(lower, closest, sourceLang)
-            } else if (isManualTrigger) {
-                // Only show "Add to Dictionary" if the user has definitely finished or triggered it
+            } else {
+                // Show "Add to Dictionary" when the user stops typing or triggers it manually
                 showAddWordDialog(lower, sourceLang)
             }
         }
