@@ -54,6 +54,10 @@
             android:name=".BasicPhrasesActivity"
             android:label="Basic Phrases" />
 
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.example.myapplication.fileprovider"

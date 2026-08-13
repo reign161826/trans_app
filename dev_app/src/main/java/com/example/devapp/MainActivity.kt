@@ -6,12 +6,16 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import java.io.InputStream
@@ -21,93 +25,58 @@ class MainActivity : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
     private lateinit var adapter: SuggestionAdapter
     private var itemList = mutableListOf<Suggestion>()
-    private var isDictionaryMode = true // Default to Dictionary
     private var listenerRegistration: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         
-        // Hide the default Action Bar to match User App style
         supportActionBar?.hide()
-
         setContentView(R.layout.activity_main)
+
+        val mainView = findViewById<View>(android.R.id.content)
+        ViewCompat.setOnApplyWindowInsetsListener(mainView) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+
+            val header = findViewById<View>(R.id.header)
+            header?.setPadding(0, systemBars.top, 0, 0)
+
+            insets
+        }
 
         db = Firebase.firestore
         
         val headerTitle: TextView = findViewById(R.id.header_title)
         val btnSync: ImageButton = findViewById(R.id.btn_sync)
-        val btnClear: ImageButton = findViewById(R.id.btn_clear_suggestions)
         val recyclerView: RecyclerView = findViewById(R.id.recycler_view)
+        val swipeRefresh: SwipeRefreshLayout = findViewById(R.id.swipe_refresh)
         recyclerView.layoutManager = LinearLayoutManager(this)
         
         adapter = SuggestionAdapter(itemList, 
-            onApprove = { item, t1, t2 -> 
-                if (isDictionaryMode) updateWord(item, t1, t2) 
-                else approveSuggestion(item, t1, t2) 
+            onApprove = { item, t1, t2, desc -> 
+                approveSuggestion(item, t1, t2, desc) 
             },
             onDecline = { item -> 
-                if (isDictionaryMode) deleteWord(item) 
-                else declineSuggestion(item) 
+                declineSuggestion(item) 
             }
         )
         recyclerView.adapter = adapter
+
+        swipeRefresh.setOnRefreshListener {
+            fetchData("suggestions")
+            swipeRefresh.isRefreshing = false
+        }
 
         btnSync.setOnClickListener {
             seedFromCsv(manual = true)
         }
 
-        btnClear.setOnClickListener {
-            clearPendingSuggestions()
-        }
-
-        val bottomNav: BottomNavigationView = findViewById(R.id.bottom_navigation)
-        bottomNav.selectedItemId = R.id.menu_dictionary // Set default selection in UI
-        
-        bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.menu_suggestions -> {
-                    isDictionaryMode = false
-                    headerTitle.text = "Suggestions"
-                    btnSync.visibility = View.GONE
-                    btnClear.visibility = View.VISIBLE
-                    adapter.setDictionaryMode(false)
-                    fetchData("suggestions", true)
-                    true
-                }
-                R.id.menu_dictionary -> {
-                    isDictionaryMode = true
-                    headerTitle.text = "Dictionary"
-                    btnSync.visibility = View.VISIBLE
-                    btnClear.visibility = View.GONE
-                    adapter.setDictionaryMode(true)
-                    fetchData("verified_words", false)
-                    true
-                }
-                else -> false
-            }
-        }
-
-        // Set initial UI state
-        headerTitle.text = "Dictionary"
-        btnSync.visibility = View.VISIBLE
-        btnClear.visibility = View.GONE
-        adapter.setDictionaryMode(true)
-
-        // Check if database needs seeding, then fetch
-        checkAndAutoSeed()
-    }
-
-    private fun checkAndAutoSeed() {
-        db.collection("verified_words").limit(1).get().addOnSuccessListener { docs ->
-            if (docs.isEmpty) {
-                Log.d("Firestore", "Database empty, auto-seeding...")
-                seedFromCsv(manual = false)
-            } else {
-                fetchData("verified_words", false)
-            }
-        }.addOnFailureListener {
-            fetchData("verified_words", false)
-        }
+        // Suggestion mode only
+        headerTitle.text = "Translation Requests"
+        btnSync.visibility = View.GONE
+        adapter.setDictionaryMode(false)
+        fetchData("suggestions")
     }
 
     private fun seedFromCsv(manual: Boolean) {
@@ -120,7 +89,6 @@ class MainActivity : AppCompatActivity() {
             val totalWords = wordsToSync.size
             if (manual) Toast.makeText(this, "Syncing $totalWords words...", Toast.LENGTH_SHORT).show()
 
-            // Firestore limit is 500 per batch. Sync in chunks of 450.
             val chunks = wordsToSync.chunked(450)
             var completedChunks = 0
 
@@ -150,10 +118,7 @@ class MainActivity : AppCompatActivity() {
                     completedChunks++
                     if (completedChunks == chunks.size) {
                         if (manual) Toast.makeText(this, "Fully Synced $totalWords words!", Toast.LENGTH_LONG).show()
-                        fetchData("verified_words", false)
                     }
-                }.addOnFailureListener { e ->
-                    Log.e("Firebase", "Batch failed: ${e.message}")
                 }
             }
         } catch (e: Exception) {
@@ -161,61 +126,52 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun fetchData(collection: String, isSuggestion: Boolean) {
+    private fun fetchData(collection: String) {
         listenerRegistration?.remove()
-        
-        // Clear the list immediately to avoid showing stale data from the previous tab
         itemList.clear()
         adapter.updateList(itemList)
         
         val emptyState: TextView = findViewById(R.id.text_empty_state)
-        emptyState.visibility = View.GONE // Hide until data returns
+        emptyState.visibility = View.GONE
         
-        listenerRegistration = db.collection(collection).addSnapshotListener { snapshots, e ->
+        listenerRegistration = db.collection(collection)
+            .whereEqualTo("status", "pending")
+            .addSnapshotListener { snapshots, e ->
             if (e != null) {
-                emptyState.text = "Connection Error: Check Firebase JSON"
+                Log.e("Firestore", "Listen failed.", e)
+                emptyState.text = "Connection Error"
                 emptyState.visibility = View.VISIBLE
                 return@addSnapshotListener
             }
             
             val newItems = mutableListOf<Suggestion>()
             snapshots?.forEach { doc ->
-                val status = doc.getString("status") ?: "pending"
-                if (!isSuggestion || status == "pending") {
-                    newItems.add(Suggestion(
-                        id = doc.id,
-                        word = doc.getString("word") ?: "",
-                        sourceLang = doc.getString("sourceLang") ?: "English",
-                        translation1 = doc.getString("translation1") ?: "",
-                        translation2 = doc.getString("translation2") ?: "",
-                        status = status
-                    ))
-                }
+                newItems.add(Suggestion(
+                    id = doc.id,
+                    word = doc.getString("word") ?: "",
+                    sourceLang = doc.getString("sourceLang") ?: "English",
+                    targetLang = doc.getString("targetLang") ?: "",
+                    userTranslation = doc.getString("translation") ?: "",
+                    translation1 = doc.getString("translation1") ?: "",
+                    translation2 = doc.getString("translation2") ?: "",
+                    description = doc.getString("description") ?: "",
+                    status = "pending",
+                    timestamp = doc.getLong("timestamp") ?: 0L
+                ))
             }
             
-            itemList = newItems
+            // Sort client-side to avoid needing a Firestore composite index
+            itemList = newItems.sortedByDescending { it.timestamp }.toMutableList()
             adapter.updateList(itemList)
             emptyState.visibility = if (itemList.isEmpty()) View.VISIBLE else View.GONE
-            emptyState.text = if (isSuggestion) "No pending suggestions" else "Dictionary is empty"
         }
-    }
-
-    private fun updateWord(item: Suggestion, t1: String, t2: String) {
-        db.collection("verified_words").document(item.id)
-            .update("translation1", t1, "translation2", t2)
-            .addOnSuccessListener { Toast.makeText(this, "Updated!", Toast.LENGTH_SHORT).show() }
-    }
-
-    private fun deleteWord(item: Suggestion) {
-        db.collection("verified_words").document(item.id).delete()
-            .addOnSuccessListener { Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show() }
     }
 
     private fun clearPendingSuggestions() {
         db.collection("suggestions").whereEqualTo("status", "pending").get()
             .addOnSuccessListener { snapshots ->
                 if (snapshots.isEmpty) {
-                    Toast.makeText(this, "No pending suggestions to clear", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "No pending suggestions", Toast.LENGTH_SHORT).show()
                     return@addOnSuccessListener
                 }
                 
@@ -229,17 +185,18 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-    private fun approveSuggestion(suggestion: Suggestion, t1: String, t2: String) {
+    private fun approveSuggestion(suggestion: Suggestion, t1: String, t2: String, desc: String) {
         val verifiedWord = hashMapOf(
             "word" to suggestion.word,
             "sourceLang" to suggestion.sourceLang,
             "translation1" to t1,
             "translation2" to t2,
+            "description" to desc,
             "timestamp" to System.currentTimeMillis()
         )
         db.collection("verified_words").document(suggestion.word.lowercase()).set(verifiedWord).addOnSuccessListener {
             db.collection("suggestions").document(suggestion.id).update("status", "approved")
-            Toast.makeText(this, "Approved and added to Dictionary", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Approved!", Toast.LENGTH_SHORT).show()
         }
     }
 

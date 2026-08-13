@@ -71,16 +71,6 @@
                 android:layout_marginBottom="12dp" />
 
             <EditText
-                android:id="@+id/edit_translation"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Translation"
-                android:padding="12dp"
-                android:background="@drawable/box_background"
-                android:textColor="#3A3838"
-                android:layout_marginBottom="12dp" />
-
-            <EditText
                 android:id="@+id/edit_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -90,7 +80,47 @@
                 android:textColor="#3A3838"
                 android:gravity="top"
                 android:minLines="3"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginBottom="12dp" />
+
+            <!-- Translation 1 -->
+            <TextView
+                android:id="@+id/label_translation_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Translation 1 (optional)"
+                android:textColor="#4E612C"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+            <EditText
+                android:id="@+id/edit_translation_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Type translation (optional)..."
+                android:padding="12dp"
+                android:background="@drawable/box_background"
+                android:textColor="#3A3838"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Translation 2 -->
+            <TextView
+                android:id="@+id/label_translation_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Translation 2 (optional)"
+                android:textColor="#4E612C"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+            <EditText
+                android:id="@+id/edit_translation_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Type translation (optional)..."
+                android:padding="12dp"
+                android:background="@drawable/box_background"
+                android:textColor="#3A3838"
+                android:layout_marginBottom="12dp" />
 
             <Button
                 android:id="@+id/btn_submit_suggestion"

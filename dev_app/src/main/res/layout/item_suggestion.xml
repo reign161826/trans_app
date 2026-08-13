@@ -1,25 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="16dp"
-    app:cardBackgroundColor="#D2DCB6"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="0dp">
+    android:orientation="vertical"
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/dash_border"
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!-- Source Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Translation from"
+            android:textColor="#4E612C"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
         <TextView
             android:id="@+id/text_source_lang"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:text="English"
+            android:textColor="#3A3838"
+            android:textSize="18sp"
+            android:textAllCaps="true"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
+            android:background="#A8B48C" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Suggested Word"
             android:textColor="#4E612C"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -33,20 +56,47 @@
             android:textColor="#3A3838"
             android:textSize="18sp" />
 
-        <!-- Divider Line -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
             android:background="#A8B48C" />
 
-        <!-- Target Section 1 -->
+        <!-- Description moved after Suggested Word -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Description"
+            android:textColor="#4E612C"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/edit_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:hint="No description provided"
+            android:textColor="#3A3838"
+            android:textSize="16sp"
+            android:paddingVertical="8dp"
+            android:inputType="textMultiLine"
+            android:minLines="1" />
+
+        <!-- Translation Inputs -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="#A8B48C" />
+
         <TextView
             android:id="@+id/label_translation_1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Translation 1"
+            android:text="Filipino"
             android:textColor="#4E612C"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -55,29 +105,24 @@
             android:id="@+id/edit_translation_1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
             android:background="@android:color/transparent"
-            android:hint="Enter translation..."
-            android:textColor="#4E612C"
-            android:textColorHint="#8B9B6F"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:padding="0dp"
+            android:hint="Type translation..."
+            android:textColor="#3A3838"
+            android:textSize="16sp"
+            android:paddingVertical="8dp"
             android:inputType="text" />
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:background="#D2DCB6" />
+            android:background="#A8B48C" />
 
-        <!-- Target Section 2 -->
         <TextView
             android:id="@+id/label_translation_2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Translation 2"
+            android:layout_marginTop="8dp"
+            android:text="Cuyonon"
             android:textColor="#4E612C"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -86,45 +131,50 @@
             android:id="@+id/edit_translation_2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
             android:background="@android:color/transparent"
-            android:hint="Enter translation..."
-            android:textColor="#4E612C"
-            android:textColorHint="#8B9B6F"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:padding="0dp"
+            android:hint="Type translation..."
+            android:textColor="#3A3838"
+            android:textSize="16sp"
+            android:paddingVertical="8dp"
             android:inputType="text" />
 
-        <!-- Action Buttons -->
-        <LinearLayout
+        <View
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btn_approve"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:backgroundTint="#4E612C"
-                android:text="Approve"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                app:cornerRadius="12dp" />
-
-            <Button
-                android:id="@+id/btn_decline"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:backgroundTint="#8B0000"
-                android:text="Decline"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                app:cornerRadius="12dp" />
-        </LinearLayout>
+            android:layout_height="1dp"
+            android:background="#A8B48C" />
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_approve"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:backgroundTint="#F6F0D7"
+            android:text="Approve"
+            android:textAllCaps="false"
+            android:textColor="#4E612C"
+            app:strokeColor="#4E612C"
+            app:strokeWidth="1dp"
+            app:cornerRadius="24dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_decline"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#9CAB84"
+            android:text="Reject"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="24dp" />
+    </LinearLayout>
+</LinearLayout>

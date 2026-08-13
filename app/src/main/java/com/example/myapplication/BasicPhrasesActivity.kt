@@ -6,8 +6,11 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ImageButton
 import android.widget.Spinner
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,12 +24,23 @@ class BasicPhrasesActivity : AppCompatActivity() {
     private var allPhrases = mutableListOf<PhraseItem>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.basic_phrases)
 
         loadPhrasesFromCsv()
 
         drawerLayout = findViewById(R.id.drawer_layout_basic_phrases)
+        ViewCompat.setOnApplyWindowInsetsListener(drawerLayout) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+
+            val header = findViewById<View>(R.id.header_layout)
+            header?.setPadding(0, systemBars.top, 0, 0)
+
+            insets
+        }
+
         val btnMenu: ImageButton = findViewById(R.id.btn_menu_basic_phrases)
         btnMenu.setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.START)

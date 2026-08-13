@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.cardview)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     
     // Firebase
     implementation(platform(libs.firebase.bom))

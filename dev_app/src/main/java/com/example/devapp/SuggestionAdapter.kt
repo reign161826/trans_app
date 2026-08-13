@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 class SuggestionAdapter(
     private var items: List<Suggestion>,
-    private val onApprove: (Suggestion, String, String) -> Unit,
+    private val onApprove: (Suggestion, String, String, String) -> Unit,
     private val onDecline: (Suggestion) -> Unit
 ) : RecyclerView.Adapter<SuggestionAdapter.ViewHolder>() {
 
@@ -18,6 +18,7 @@ class SuggestionAdapter(
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val textWord: TextView = view.findViewById(R.id.text_word)
+        val editDescription: EditText = view.findViewById(R.id.edit_description)
         val textSourceLang: TextView = view.findViewById(R.id.text_source_lang)
         val labelTranslation1: TextView = view.findViewById(R.id.label_translation_1)
         val editTranslation1: EditText = view.findViewById(R.id.edit_translation_1)
@@ -36,7 +37,8 @@ class SuggestionAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.textWord.text = item.word
-        holder.textSourceLang.text = "Source: ${item.sourceLang}"
+        holder.editDescription.setText(item.description)
+        holder.textSourceLang.text = item.sourceLang
         
         val targets = when (item.sourceLang) {
             "English" -> Pair("Filipino", "Cuyonon")
@@ -54,18 +56,25 @@ class SuggestionAdapter(
             holder.btnApprove.text = "Update"
             holder.btnDecline.text = "Delete"
         } else {
-            holder.editTranslation1.setText("")
-            holder.editTranslation2.setText("")
+            // Suggestion mode: Prefill the ones from user suggestion
+            // Prefer the new translation1/translation2 fields if available
+            val t1 = if (item.translation1.isNotEmpty()) item.translation1 
+                     else if (item.targetLang == targets.first) item.userTranslation else ""
+            
+            val t2 = if (item.translation2.isNotEmpty()) item.translation2
+                     else if (item.targetLang == targets.second) item.userTranslation else ""
+            
+            holder.editTranslation1.setText(t1)
+            holder.editTranslation2.setText(t2)
             holder.btnApprove.text = "Approve"
-            holder.btnDecline.text = "Decline"
+            holder.btnDecline.text = "Reject"
         }
 
         holder.btnApprove.setOnClickListener {
             val t1 = holder.editTranslation1.text.toString()
             val t2 = holder.editTranslation2.text.toString()
-            if (t1.isNotEmpty() || t2.isNotEmpty()) {
-                onApprove(item, t1, t2)
-            }
+            val desc = holder.editDescription.text.toString()
+            onApprove(item, t1, t2, desc)
         }
         
         holder.btnDecline.setOnClickListener {

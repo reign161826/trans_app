@@ -16,17 +16,21 @@ import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.MenuItem
+import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.mlkit.vision.common.InputImage
@@ -63,14 +67,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var hideSuggestionRunnable: Runnable? = null
     private var isDialogShowing = false
 
-    private var cuyononDictionary = mutableMapOf<String, String>()
+    private var englishToFilipino = mutableMapOf<String, String>()
+    private var englishToCuyonon = mutableMapOf<String, String>()
+    private var filipinoToEnglish = mutableMapOf<String, String>()
     private var filipinoToCuyonon = mutableMapOf<String, String>()
+    private var cuyononToEnglish = mutableMapOf<String, String>()
+    private var cuyononToFilipino = mutableMapOf<String, String>()
     
     private var englishWords = mutableSetOf<String>()
     private var filipinoWords = mutableSetOf<String>()
     private var cuyononWords = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_drawer)
 
@@ -78,6 +87,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         listenToVerifiedWords()
 
         drawerLayout = findViewById(R.id.drawer_layout)
+        ViewCompat.setOnApplyWindowInsetsListener(drawerLayout) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+
+            val header = findViewById<View>(R.id.headerLayout)
+            header.setPadding(0, systemBars.top, 0, 0)
+
+            insets
+        }
         val navView: NavigationView = findViewById(R.id.nav_view)
         navView.setNavigationItemSelectedListener(this)
 
@@ -243,6 +261,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         handleIntent(intent)
         checkShowGuidelines()
+
+        if (savedInstanceState != null) {
+            savedInstanceState.getString("photo_file_path")?.let { photoFile = File(it) }
+            savedInstanceState.getString("photo_uri")?.let { photoUri = Uri.parse(it) }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        photoFile?.let { outState.putString("photo_file_path", it.absolutePath) }
+        photoUri?.let { outState.putString("photo_uri", it.toString()) }
     }
 
     private fun checkShowGuidelines() {
@@ -333,23 +362,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun dispatchTakePictureIntent() {
-        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
-            takePictureIntent.resolveActivity(packageManager)?.also {
-                photoFile = try {
-                    createImageFile()
-                } catch (ex: IOException) {
-                    null
-                }
-                photoFile?.also {
-                    photoUri = FileProvider.getUriForFile(
-                        this,
-                        "com.example.myapplication.fileprovider",
-                        it
-                    )
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-                    startActivityForResult(takePictureIntent, CAMERA_REQUEST_CODE)
-                }
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        if (takePictureIntent.resolveActivity(packageManager) != null) {
+            photoFile = try {
+                createImageFile()
+            } catch (ex: IOException) {
+                Toast.makeText(this, "Error creating image file", Toast.LENGTH_SHORT).show()
+                null
             }
+            photoFile?.also {
+                photoUri = FileProvider.getUriForFile(
+                    this,
+                    "com.example.myapplication.fileprovider",
+                    it
+                )
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                startActivityForResult(takePictureIntent, CAMERA_REQUEST_CODE)
+            }
+        } else {
+            Toast.makeText(this, "No camera app found", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -373,17 +404,34 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 performTranslation(result[0], isManualTrigger = true)
             }
         } else if (requestCode == CAMERA_REQUEST_CODE && resultCode == RESULT_OK) {
-            photoFile?.let {
+            photoUri?.let {
+                recognizeTextFromImage(it)
+            } ?: photoFile?.let {
                 val bitmap = BitmapFactory.decodeFile(it.absolutePath)
-                recognizeTextFromImage(bitmap)
+                if (bitmap != null) {
+                    recognizeTextFromImage(bitmap)
+                }
             }
         }
     }
 
+    private fun recognizeTextFromImage(uri: Uri) {
+        val image: InputImage = try {
+            InputImage.fromFilePath(this, uri)
+        } catch (e: IOException) {
+            Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show()
+            return
+        }
+        processImage(image)
+    }
+
     private fun recognizeTextFromImage(bitmap: Bitmap) {
         val image = InputImage.fromBitmap(bitmap, 0)
-        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        processImage(image)
+    }
 
+    private fun processImage(image: InputImage) {
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         recognizer.process(image)
             .addOnSuccessListener { visionText ->
                 val resultText = visionText.text
@@ -552,24 +600,41 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
 
         val editWord = dialog.findViewById<EditText>(R.id.edit_word)
-        val editTranslation = dialog.findViewById<EditText>(R.id.edit_translation)
+        val labelT1 = dialog.findViewById<TextView>(R.id.label_translation_1)
+        val editT1 = dialog.findViewById<EditText>(R.id.edit_translation_1)
+        val labelT2 = dialog.findViewById<TextView>(R.id.label_translation_2)
+        val editT2 = dialog.findViewById<EditText>(R.id.edit_translation_2)
         val editDescription = dialog.findViewById<EditText>(R.id.edit_description)
         val btnSubmit = dialog.findViewById<android.widget.Button>(R.id.btn_submit_suggestion)
         val btnClose = dialog.findViewById<ImageButton>(R.id.btn_close_dialog)
 
+        // Determine labels based on source language
+        val targets = when (lang) {
+            "English" -> Pair("Filipino", "Cuyonon")
+            "Filipino" -> Pair("English", "Cuyonon")
+            "Cuyonon" -> Pair("English", "Filipino")
+            else -> Pair("Translation 1", "Translation 2")
+        }
+
+        labelT1.text = "${targets.first} (optional)"
+        labelT2.text = "${targets.second} (optional)"
+        editT1.hint = "Type ${targets.first} translation (optional)..."
+        editT2.hint = "Type ${targets.second} translation (optional)..."
+        
         editWord.setText(word)
 
         btnSubmit.setOnClickListener {
             val suggestedWord = editWord.text.toString().trim()
-            val translation = editTranslation.text.toString().trim()
+            val t1 = editT1.text.toString().trim()
+            val t2 = editT2.text.toString().trim()
             val description = editDescription.text.toString().trim()
 
-            if (suggestedWord.isEmpty() || translation.isEmpty()) {
-                Toast.makeText(this, "Please fill in the word and translation", Toast.LENGTH_SHORT).show()
+            if (suggestedWord.isEmpty()) {
+                Toast.makeText(this, "Please fill in the word to suggest", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            sendWordToDeveloper(lang, suggestedWord, translation, description)
+            sendWordToDeveloper(lang, suggestedWord, t1, t2, description)
             dialog.dismiss()
         }
 
@@ -581,12 +646,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         dialog.show()
     }
 
-    private fun sendWordToDeveloper(sourceLang: String, word: String, translation: String, description: String) {
+    private fun sendWordToDeveloper(sourceLang: String, word: String, t1: String, t2: String, description: String) {
         val db = Firebase.firestore
         val suggestion = hashMapOf(
             "sourceLang" to sourceLang,
             "word" to word.trim(),
-            "translation" to translation,
+            "translation1" to t1,
+            "translation2" to t2,
             "description" to description,
             "timestamp" to System.currentTimeMillis(),
             "status" to "pending"
@@ -635,28 +701,36 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val reader = inputStream.bufferedReader()
             reader.useLines { lines ->
                 lines.toList().drop(1).forEach { line ->
-                    val tokens = line.split(",")
+                    val tokens = if (line.contains("\t")) line.split("\t") else line.split(",")
                     if (tokens.size >= 3) {
-                        val english = tokens[0].trim().lowercase()
-                        val filipino = tokens[1].trim().lowercase()
-                        val cuyonon = tokens[2].trim().lowercase()
-
-                        if (english.isNotEmpty()) {
-                            englishWords.add(english)
-                            if (cuyonon.isNotEmpty()) cuyononDictionary[english] = cuyonon
-                        }
-                        if (filipino.isNotEmpty()) {
-                            filipinoWords.add(filipino)
-                            if (cuyonon.isNotEmpty()) filipinoToCuyonon[filipino] = cuyonon
-                        }
-                        if (cuyonon.isNotEmpty()) {
-                            cuyononWords.add(cuyonon)
-                        }
+                        addTrilingualEntry(tokens[0], tokens[1], tokens[2])
                     }
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun addTrilingualEntry(eng: String, fil: String, cuy: String) {
+        val e = eng.lowercase().trim()
+        val f = fil.lowercase().trim()
+        val c = cuy.lowercase().trim()
+
+        if (e.isNotEmpty()) {
+            englishWords.add(e)
+            if (f.isNotEmpty()) englishToFilipino[e] = f
+            if (c.isNotEmpty()) englishToCuyonon[e] = c
+        }
+        if (f.isNotEmpty()) {
+            filipinoWords.add(f)
+            if (e.isNotEmpty()) filipinoToEnglish[f] = e
+            if (c.isNotEmpty()) filipinoToCuyonon[f] = c
+        }
+        if (c.isNotEmpty()) {
+            cuyononWords.add(c)
+            if (e.isNotEmpty()) cuyononToEnglish[c] = e
+            if (f.isNotEmpty()) cuyononToFilipino[c] = f
         }
     }
 
@@ -673,25 +747,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 
                 if (word.isNotEmpty()) {
                     when (sourceLang) {
-                        "English" -> {
-                            englishWords.add(word)
-                            if (t2.isNotEmpty()) cuyononDictionary[word] = t2 // Cuyonon is t2 for English
-                            // If we had an English-to-Filipino map, we'd put t1 there
-                        }
-                        "Filipino" -> {
-                            filipinoWords.add(word)
-                            if (t2.isNotEmpty()) filipinoToCuyonon[word] = t2 // Cuyonon is t2 for Filipino
-                        }
-                        "Cuyonon" -> {
-                            cuyononWords.add(word)
-                            if (t1.isNotEmpty()) {
-                                // Add to a reverse map if needed, 
-                                // currently translateOffline handles Cuyonon via reverse lookup of English/Filipino maps
-                                // So we should actually add the translations to the primary maps
-                                cuyononDictionary[t1] = word // t1 is English
-                                filipinoToCuyonon[t2] = word // t2 is Filipino
-                            }
-                        }
+                        "English" -> addTrilingualEntry(word, t1, t2)
+                        "Filipino" -> addTrilingualEntry(t1, word, t2)
+                        "Cuyonon" -> addTrilingualEntry(t1, t2, word)
                     }
                 }
             }
@@ -700,85 +758,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun translateOffline(text: String, source: String, target: String): String {
         val lowerText = text.lowercase().trim()
-
-        if (target == "Cuyonon") {
-            if (source == "English") {
-                return cuyononDictionary[lowerText] ?: translateByWords(lowerText, cuyononDictionary)
-            } else if (source == "Filipino") {
-                return filipinoToCuyonon[lowerText] ?: translateByWords(lowerText, filipinoToCuyonon)
-            }
-        } else if (source == "Cuyonon") {
-            // Reverse lookup for Cuyonon to English/Filipino
-            val targetMap = if (target == "English") {
-                cuyononDictionary.entries.associate { it.value to it.key }
-            } else {
-                filipinoToCuyonon.entries.associate { it.value to it.key }
-            }
-            return targetMap[lowerText] ?: translateByWords(lowerText, targetMap)
+        
+        val map = when (source) {
+            "English" -> if (target == "Filipino") englishToFilipino else englishToCuyonon
+            "Filipino" -> if (target == "English") filipinoToEnglish else filipinoToCuyonon
+            "Cuyonon" -> if (target == "English") cuyononToEnglish else cuyononToFilipino
+            else -> emptyMap<String, String>()
         }
 
-        // Fallback to old hardcoded logic for English-Filipino
-        val dictionary = mapOf(
-            "English-Filipino" to mapOf(
-                "hello" to "kumusta",
-                "good morning" to "magandang umaga",
-                "good afternoon" to "magandang hapon",
-                "good evening" to "magandang gabi",
-                "thank you" to "salamat",
-                "thank you very much" to "maraming salamat",
-                "goodbye" to "paalam",
-                "how much" to "magkano",
-                "where is" to "nasaan ang",
-                "water" to "tubig",
-                "food" to "pagkain",
-                "eat" to "kain",
-                "yes" to "oo",
-                "no" to "hindi",
-                "i love you" to "mahal kita",
-                "help" to "tulong",
-                "friend" to "kaibigan",
-                "beautiful" to "maganda",
-                "happy" to "masaya",
-                "sorry" to "patawad",
-                "what" to "ano",
-                "this" to "ito",
-                "what is this" to "ano ito"
-            ),
-            "Filipino-English" to mapOf(
-                "kumusta" to "hello",
-                "magandang umaga" to "good morning",
-                "magandang hapon" to "good afternoon",
-                "magandang gabi" to "good evening",
-                "salamat" to "thank you",
-                "maraming salamat" to "thank you very much",
-                "paalam" to "goodbye",
-                "magkano" to "how much",
-                "nasaan ang" to "where is",
-                "tubig" to "water",
-                "pagkain" to "food",
-                "kain" to "eat",
-                "oo" to "yes",
-                "hindi" to "no",
-                "mahal kita" to "i love you",
-                "tulong" to "help",
-                "kaibigan" to "friend",
-                "maganda" to "beautiful",
-                "masaya" to "happy",
-                "patawad" to "sorry",
-                "ano" to "what",
-                "ito" to "this",
-                "ano ito" to "what is this?"
-            )
-        )
-
-        val key = "$source-$target"
-        val langDict = dictionary[key] ?: return text
-        
         // 1. Try to find exact match
-        langDict[lowerText]?.let { return it }
+        map[lowerText]?.let { return it }
         
         // 2. Word-by-word fallback
-        return translateByWords(lowerText, langDict)
+        return translateByWords(lowerText, map)
     }
 
     private fun translateByWords(text: String, dict: Map<String, String>): String {

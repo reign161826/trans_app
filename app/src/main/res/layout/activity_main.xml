@@ -11,13 +11,13 @@
     <LinearLayout
         android:id="@+id/headerLayout"
         android:layout_width="0dp"
-        android:layout_height="100dp"
+        android:layout_height="wrap_content"
+        android:minHeight="100dp"
         android:background="#9CAB84"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="4dp"
         android:paddingEnd="20dp"
-        android:paddingTop="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
