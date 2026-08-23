@@ -140,6 +140,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         btnSwitch.setOnClickListener {
             val sourcePos = spinnerSource.selectedItemPosition
             val targetPos = spinnerTarget.selectedItemPosition
+
+            val currentInput = inputText.text.toString().trim()
+            val currentOutput = outputText.text.toString().trim()
+
+            if (currentInput.isNotEmpty() && currentOutput.isNotEmpty() && currentOutput != "Translated text here...") {
+                inputText.setText(currentOutput)
+            }
+
             spinnerSource.setSelection(targetPos)
             spinnerTarget.setSelection(sourcePos)
         }
@@ -600,6 +608,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
 
         val editWord = dialog.findViewById<EditText>(R.id.edit_word)
+        val labelSource = dialog.findViewById<TextView>(R.id.label_source_language)
         val labelT1 = dialog.findViewById<TextView>(R.id.label_translation_1)
         val editT1 = dialog.findViewById<EditText>(R.id.edit_translation_1)
         val labelT2 = dialog.findViewById<TextView>(R.id.label_translation_2)
@@ -609,6 +618,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val btnClose = dialog.findViewById<ImageButton>(R.id.btn_close_dialog)
 
         // Determine labels based on source language
+        labelSource.text = "Language: $lang"
         val targets = when (lang) {
             "English" -> Pair("Filipino", "Cuyonon")
             "Filipino" -> Pair("English", "Cuyonon")
