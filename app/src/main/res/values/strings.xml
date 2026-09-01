@@ -32,4 +32,14 @@
         <item>Filipino</item>
         <item>English</item>
     </string-array>
+    <string name="suggest_to_dictionary">Suggest to Dictionary</string>
+    <string name="suggest_subtitle">It\'s not in our database. Would you like to us to add it in the database?</string>
+    <string name="label_language_source">Language: %1$s</string>
+    <string name="hint_word_to_add">Word to add</string>
+    <string name="label_description_optional">Description (optional)</string>
+    <string name="hint_description_optional">Type description (optional)...</string>
+    <string name="label_translation_optional">Translation (optional)</string>
+    <string name="hint_translation_optional">Type translation (optional)...</string>
+    <string name="submit_suggestion">Submit Suggestion</string>
+    <string name="content_description_close">Close dialog</string>
 </resources>

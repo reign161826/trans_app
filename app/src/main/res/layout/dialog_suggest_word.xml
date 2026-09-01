@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
-            android:text="Suggest to Dictionary"
+            android:text="@string/suggest_to_dictionary"
             android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:textStyle="bold"
@@ -39,6 +39,7 @@
             android:layout_marginEnd="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:contentDescription="@string/content_description_close"
             app:layout_constraintBottom_toBottomOf="@id/header_bg"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/header_bg"
@@ -53,9 +54,10 @@
             app:layout_constraintTop_toBottomOf="@id/header_bg">
 
             <TextView
+                android:id="@+id/dialog_subtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="It's not in our database. Would you like to us to add it in the database?"
+                android:text="@string/suggest_subtitle"
                 android:textColor="#4E612C"
                 android:textSize="14sp"
                 android:layout_marginBottom="16dp" />
@@ -64,7 +66,7 @@
                 android:id="@+id/label_source_language"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Language: Source"
+                android:text="@string/label_language_source"
                 android:textColor="#4E612C"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -74,34 +76,49 @@
                 android:id="@+id/edit_word"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Word to add"
+                android:hint="@string/hint_word_to_add"
                 android:padding="12dp"
                 android:background="@drawable/box_background"
                 android:textColor="#3A3838"
                 android:focusable="false"
+                android:focusableInTouchMode="false"
                 android:clickable="false"
                 android:cursorVisible="false"
                 android:longClickable="false"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp"
+                android:importantForAutofill="no"
+                android:inputType="text" />
+
+            <TextView
+                android:id="@+id/label_description"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_description_optional"
+                android:textColor="#4E612C"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <EditText
                 android:id="@+id/edit_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Description (optional)"
+                android:hint="@string/hint_description_optional"
                 android:padding="12dp"
                 android:background="@drawable/box_background"
                 android:textColor="#3A3838"
                 android:gravity="top"
                 android:minLines="3"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine" />
 
             <!-- Translation 1 -->
             <TextView
                 android:id="@+id/label_translation_1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Translation 1 (optional)"
+                android:text="@string/label_translation_optional"
                 android:textColor="#4E612C"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -110,18 +127,20 @@
                 android:id="@+id/edit_translation_1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Type translation (optional)..."
+                android:hint="@string/hint_translation_optional"
                 android:padding="12dp"
                 android:background="@drawable/box_background"
                 android:textColor="#3A3838"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp"
+                android:importantForAutofill="no"
+                android:inputType="text" />
 
             <!-- Translation 2 -->
             <TextView
                 android:id="@+id/label_translation_2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Translation 2 (optional)"
+                android:text="@string/label_translation_optional"
                 android:textColor="#4E612C"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -130,17 +149,19 @@
                 android:id="@+id/edit_translation_2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Type translation (optional)..."
+                android:hint="@string/hint_translation_optional"
                 android:padding="12dp"
                 android:background="@drawable/box_background"
                 android:textColor="#3A3838"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp"
+                android:importantForAutofill="no"
+                android:inputType="text" />
 
             <Button
                 android:id="@+id/btn_submit_suggestion"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Submit Suggestion"
+                android:text="@string/submit_suggestion"
                 android:backgroundTint="#4E612C"
                 android:textColor="#FFFFFF" />
 

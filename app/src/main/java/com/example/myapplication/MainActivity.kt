@@ -618,7 +618,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val btnClose = dialog.findViewById<ImageButton>(R.id.btn_close_dialog)
 
         // Determine labels based on source language
-        labelSource.text = "Language: $lang"
+        labelSource.text = getString(R.string.label_language_source, lang)
         val targets = when (lang) {
             "English" -> Pair("Filipino", "Cuyonon")
             "Filipino" -> Pair("English", "Cuyonon")
@@ -626,12 +626,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             else -> Pair("Translation 1", "Translation 2")
         }
 
-        labelT1.text = "${targets.first} (optional)"
-        labelT2.text = "${targets.second} (optional)"
-        editT1.hint = "Type ${targets.first} translation (optional)..."
-        editT2.hint = "Type ${targets.second} translation (optional)..."
+        labelT1.text = getString(R.string.label_translation_optional).replace("Translation", targets.first)
+        labelT2.text = getString(R.string.label_translation_optional).replace("Translation", targets.second)
+        editT1.hint = getString(R.string.hint_translation_optional).replace("translation", targets.first.lowercase())
+        editT2.hint = getString(R.string.hint_translation_optional).replace("translation", targets.second.lowercase())
         
         editWord.setText(word)
+        // Ensure word field is non-editable in code as well
+        editWord.apply {
+            isFocusable = false
+            isFocusableInTouchMode = false
+            isClickable = false
+            isLongClickable = false
+        }
 
         btnSubmit.setOnClickListener {
             val suggestedWord = editWord.text.toString().trim()
@@ -778,9 +785,90 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         // 1. Try to find exact match
         map[lowerText]?.let { return it }
+
+        // 2. Apply Grammar Rules (General patterns)
+        val grammarResult = applyGrammarRules(lowerText, source, target, map)
+        if (grammarResult != null) return grammarResult
         
-        // 2. Word-by-word fallback
+        // 3. Word-by-word fallback
         return translateByWords(lowerText, map)
+    }
+
+    private fun applyGrammarRules(text: String, source: String, target: String, dict: Map<String, String>): String? {
+        val words = text.split("\\s+".toRegex())
+
+        // --- TO ENGLISH RULES ---
+        if (target == "English") {
+            // Rule 1: Negation "Hindi/Indi [Adj] [Pronoun]" -> "[Pronoun] is/are not [Adj]"
+            // Example: "Hindi panget mo" -> "You are not ugly"
+            if (words.size == 3 && (words[0] == "hindi" || words[0] == "indi")) {
+                val adj = dict[words[1]]
+                val subject = dict[words[2]]
+                if (adj != null && subject != null) {
+                    return "${subject.replaceFirstChar { it.uppercase() }} ${getVerb(subject)} not $adj"
+                }
+            }
+
+            // Rule 2: "Ang [Adj] [Pronoun]" (Filipino) -> "[Pronoun] is/are [Adj]"
+            if (words.size == 3 && words[0] == "ang") {
+                val adj = dict[words[1]]
+                val subject = dict[words[2]]
+                if (adj != null && subject != null) {
+                    return "${subject.replaceFirstChar { it.uppercase() }} ${getVerb(subject)} $adj"
+                }
+            }
+
+            // Rule 3: "Mga [Noun]" -> "[Noun]s" (Simple Plurality)
+            if (words.size == 2 && words[0] == "mga") {
+                val noun = dict[words[1]]
+                if (noun != null) return "${noun}s"
+            }
+
+            // Rule 4: "[Adj] [Pronoun]" (Cuyonon/Filipino style) -> "[Pronoun] is/are [Adj]"
+            if (words.size == 2) {
+                val adj = dict[words[0]]
+                val subject = dict[words[1]]
+                if (adj != null && subject != null && isPronoun(subject)) {
+                    return "${subject.replaceFirstChar { it.uppercase() }} ${getVerb(subject)} $adj"
+                }
+            }
+        }
+
+        // --- FROM ENGLISH RULES ---
+        if (source == "English") {
+            // Rule 5: "[Pronoun] [am/is/are] [Adj]" -> "[Adj] [Pronoun]" or "Ako ay [Adj]"
+            if (words.size == 3 && (words[1] == "am" || words[1] == "is" || words[1] == "are")) {
+                val subject = dict[words[0]]
+                val adj = dict[words[2]]
+                if (subject != null && adj != null) {
+                    return if (target == "Filipino") "$subject ay $adj" else "$adj $subject"
+                }
+            }
+
+            // Rule 6: "Where is/are (the) [Noun]" -> "Saan (ang) [Noun]"
+            // Example: "Where is the pharmacy" -> "Saan ang botika"
+            if (words.size >= 3 && words[0] == "where" && (words[1] == "is" || words[1] == "are")) {
+                val translatedRemaining = words.drop(2).map { dict[it] ?: it }.joinToString(" ")
+                val where = dict["where"] ?: if (target == "Filipino") "saan" else "sadin"
+                return "${where.replaceFirstChar { it.uppercase() }} $translatedRemaining"
+            }
+        }
+
+        return null
+    }
+
+    private fun getVerb(subject: String): String {
+        val s = subject.lowercase()
+        return when {
+            s == "i" -> "am"
+            s == "you" || s == "we" || s == "they" -> "are"
+            else -> "is"
+        }
+    }
+
+    private fun isPronoun(word: String): Boolean {
+        val pronouns = listOf("i", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them")
+        return pronouns.contains(word.lowercase())
     }
 
     private fun translateByWords(text: String, dict: Map<String, String>): String {
