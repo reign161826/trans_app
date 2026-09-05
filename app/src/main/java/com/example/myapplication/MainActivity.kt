@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaPlayer
 import android.net.Uri
 import android.provider.MediaStore
 import android.speech.RecognizerIntent
@@ -56,6 +57,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var spinnerTarget: Spinner
 
     private var tts: TextToSpeech? = null
+    private var mediaPlayer: MediaPlayer? = null
     private val SPEECH_REQUEST_CODE = 100
     private val RECORD_AUDIO_REQUEST_CODE = 101
     private val CAMERA_REQUEST_CODE = 102
@@ -269,6 +271,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         handleIntent(intent)
         checkShowGuidelines()
+        checkForUpdates()
 
         if (savedInstanceState != null) {
             savedInstanceState.getString("photo_file_path")?.let { photoFile = File(it) }
@@ -294,6 +297,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun showGuidelinesDialog() {
         val dialog = android.app.Dialog(this)
         dialog.setContentView(R.layout.dialog_guidelines)
+        
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         // Set dialog width to 90% of screen width to prevent "squished" look
@@ -305,15 +309,67 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         btnClose.setOnClickListener {
             if (cbDontShow.isChecked) {
-                getSharedPreferences("app_settings", MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("dont_show_guidelines", true)
-                    .apply()
+                val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+                prefs.edit().putBoolean("dont_show_guidelines", true).apply()
             }
             dialog.dismiss()
         }
-
         dialog.show()
+    }
+
+    private fun checkForUpdates(isManual: Boolean = false) {
+        val updateUrl = "https://raw.githubusercontent.com/reign161826/trans-app-updates/refs/heads/main/version.json"
+        
+        Thread {
+            try {
+                val connection = java.net.URL(updateUrl).openConnection() as java.net.HttpURLConnection
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                
+                val jsonString = connection.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(jsonString)
+                val latestVersionCode = json.getInt("versionCode")
+                val downloadUrl = json.getString("downloadUrl")
+                val releaseNotes = json.optString("releaseNotes", "A new version of the app is available.")
+
+                val currentVersionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    packageManager.getPackageInfo(packageName, 0).longVersionCode
+                } else {
+                    @Suppress("DEPRECATION")
+                    packageManager.getPackageInfo(packageName, 0).versionCode.toLong()
+                }
+
+                if (latestVersionCode > currentVersionCode) {
+                    handler.post {
+                        showUpdateDialog(downloadUrl, releaseNotes)
+                    }
+                } else if (isManual) {
+                    handler.post {
+                        Toast.makeText(this, "App is up to date", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                if (isManual) {
+                    handler.post {
+                        Toast.makeText(this, "Failed to check for updates", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                e.printStackTrace()
+            }
+        }.start()
+    }
+
+    private fun showUpdateDialog(downloadUrl: String, notes: String) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Update Available")
+            .setMessage(notes)
+            .setCancelable(true)
+            .setPositiveButton("Download") { _, _ ->
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
+                startActivity(intent)
+            }
+            .setNegativeButton("Later", null)
+            .show()
     }
 
     override fun onInit(status: Int) {
@@ -456,14 +512,43 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun speakText(text: String, isTarget: Boolean = true) {
-        val lang = if (isTarget) spinnerTarget.selectedItem.toString() else spinnerSource.selectedItem.toString()
-        val locale = when (lang) {
-            "English" -> Locale.US
-            "Filipino" -> Locale("fil", "PH")
-            else -> Locale.US
+        // 1. Prepare filename: lowercase, replace spaces with underscores, remove special chars
+        val cleanFileName = text.lowercase().trim()
+            .replace(" ", "_")
+            .replace(Regex("[^a-z0-9_]"), "")
+
+        // 2. Check if a recording exists in res/raw
+        val resId = resources.getIdentifier(cleanFileName, "raw", packageName)
+
+        if (resId != 0) {
+            // 3. Play the human recording
+            playRecording(resId)
+        } else {
+            // 4. Fallback to robotic TTS if no recording found
+            val lang = if (isTarget) spinnerTarget.selectedItem.toString() else spinnerSource.selectedItem.toString()
+            val locale = when (lang) {
+                "English" -> Locale.US
+                "Filipino" -> Locale("fil", "PH")
+                else -> Locale.US
+            }
+            tts?.language = locale
+            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
         }
-        tts?.language = locale
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+
+    private fun playRecording(resId: Int) {
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer.create(this, resId)
+            mediaPlayer?.setOnCompletionListener { 
+                it.release()
+                mediaPlayer = null
+            }
+            mediaPlayer?.start()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onDestroy() {
@@ -471,6 +556,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             it.stop()
             it.shutdown()
         }
+        mediaPlayer?.release()
+        mediaPlayer = null
         super.onDestroy()
     }
 
@@ -494,6 +581,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 // Set spinners to matching languages
                 setSpinnerSelection(spinnerSource, sourceLang)
                 setSpinnerSelection(spinnerTarget, targetLang)
+            }
+
+            if (it.getBooleanExtra("checkUpdate", false)) {
+                checkForUpdates(isManual = true)
             }
         }
     }
@@ -543,6 +634,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
         val translated = translateOffline(text, sourceLang, targetLang)
+
         outputText.text = translated
         saveToHistory(text, translated)
     }
@@ -832,6 +924,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     return "${subject.replaceFirstChar { it.uppercase() }} ${getVerb(subject)} $adj"
                 }
             }
+
+            // Rule 7: "Saan/Sadin ang [Noun]" -> "Where is the [Noun]"
+            if (words.size >= 2 && (words[0] == "saan" || words[0] == "sadin")) {
+                val remainingWords = if (words.size > 1 && words[1] == "ang") words.drop(2) else words.drop(1)
+                val translatedNoun = remainingWords.map { dict[it] ?: it }.joinToString(" ")
+                if (translatedNoun.isNotEmpty()) {
+                    return "Where is the $translatedNoun"
+                }
+            }
         }
 
         // --- FROM ENGLISH RULES ---
@@ -925,6 +1026,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             R.id.nav_home -> {
                 // Already on Home
+            }
+            R.id.nav_update -> {
+                checkForUpdates(isManual = true)
             }
         }
         drawerLayout.closeDrawer(GravityCompat.START)

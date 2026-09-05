@@ -38,6 +38,16 @@ android {
     buildFeatures {
         compose = true
     }
+
+    packaging {
+        resources {
+            excludes.add("/META-INF/{AL2.0,LGPL2.1}")
+        }
+    }
+
+    androidResources {
+        noCompress.add("m4a")
+    }
 }
 
 dependencies {

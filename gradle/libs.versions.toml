@@ -13,6 +13,8 @@ material = "1.14.0"
 cardview = "1.0.0"
 constraintlayout = "2.1.4"
 mlkit-text-recognition = "19.0.0"
+onnxruntime = "1.20.0"
+onnxruntime-extensions = "0.13.0"
 googleServices = "4.4.1"
 firebaseBom = "33.10.0"
 
@@ -36,6 +38,8 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 mlkit-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "mlkit-text-recognition" }
+onnx-runtime = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxruntime" }
+onnx-extensions = { group = "com.microsoft.onnxruntime", name = "onnxruntime-extensions-android", version.ref = "onnxruntime-extensions" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }

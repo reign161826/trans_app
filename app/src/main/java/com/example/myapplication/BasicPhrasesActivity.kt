@@ -91,6 +91,13 @@ class BasicPhrasesActivity : AppCompatActivity() {
                     startActivity(intent)
                     finish()
                 }
+                R.id.nav_update -> {
+                    val intent = Intent(this, MainActivity::class.java)
+                    intent.putExtra("checkUpdate", true)
+                    intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    startActivity(intent)
+                    finish()
+                }
             }
             drawerLayout.closeDrawer(GravityCompat.START)
             true

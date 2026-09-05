@@ -20,4 +20,8 @@
         android:id="@+id/nav_about"
         android:icon="@drawable/ic_nav_about"
         android:title="About" />
+    <item
+        android:id="@+id/nav_update"
+        android:icon="@android:drawable/stat_notify_sync"
+        android:title="Check for Updates" />
 </menu>
