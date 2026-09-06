@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.media.MediaPlayer
 import android.net.Uri
 import android.provider.MediaStore
 import android.speech.RecognizerIntent
@@ -17,21 +16,17 @@ import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.MenuItem
-import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.GravityCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.mlkit.vision.common.InputImage
@@ -57,7 +52,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var spinnerTarget: Spinner
 
     private var tts: TextToSpeech? = null
-    private var mediaPlayer: MediaPlayer? = null
     private val SPEECH_REQUEST_CODE = 100
     private val RECORD_AUDIO_REQUEST_CODE = 101
     private val CAMERA_REQUEST_CODE = 102
@@ -68,36 +62,24 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var translationRunnable: Runnable? = null
     private var hideSuggestionRunnable: Runnable? = null
     private var isDialogShowing = false
+    private lateinit var onnxTranslator: OnnxTranslator
 
-    private var englishToFilipino = mutableMapOf<String, String>()
-    private var englishToCuyonon = mutableMapOf<String, String>()
-    private var filipinoToEnglish = mutableMapOf<String, String>()
+    private var cuyononDictionary = mutableMapOf<String, String>()
     private var filipinoToCuyonon = mutableMapOf<String, String>()
-    private var cuyononToEnglish = mutableMapOf<String, String>()
-    private var cuyononToFilipino = mutableMapOf<String, String>()
     
     private var englishWords = mutableSetOf<String>()
     private var filipinoWords = mutableSetOf<String>()
     private var cuyononWords = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_drawer)
 
         loadDictionaryFromCsv()
         listenToVerifiedWords()
+        onnxTranslator = OnnxTranslator(this)
 
         drawerLayout = findViewById(R.id.drawer_layout)
-        ViewCompat.setOnApplyWindowInsetsListener(drawerLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
-
-            val header = findViewById<View>(R.id.headerLayout)
-            header.setPadding(0, systemBars.top, 0, 0)
-
-            insets
-        }
         val navView: NavigationView = findViewById(R.id.nav_view)
         navView.setNavigationItemSelectedListener(this)
 
@@ -142,14 +124,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         btnSwitch.setOnClickListener {
             val sourcePos = spinnerSource.selectedItemPosition
             val targetPos = spinnerTarget.selectedItemPosition
-
-            val currentInput = inputText.text.toString().trim()
-            val currentOutput = outputText.text.toString().trim()
-
-            if (currentInput.isNotEmpty() && currentOutput.isNotEmpty() && currentOutput != "Translated text here...") {
-                inputText.setText(currentOutput)
-            }
-
             spinnerSource.setSelection(targetPos)
             spinnerTarget.setSelection(sourcePos)
         }
@@ -271,18 +245,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         handleIntent(intent)
         checkShowGuidelines()
-        checkForUpdates()
-
-        if (savedInstanceState != null) {
-            savedInstanceState.getString("photo_file_path")?.let { photoFile = File(it) }
-            savedInstanceState.getString("photo_uri")?.let { photoUri = Uri.parse(it) }
-        }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        photoFile?.let { outState.putString("photo_file_path", it.absolutePath) }
-        photoUri?.let { outState.putString("photo_uri", it.toString()) }
     }
 
     private fun checkShowGuidelines() {
@@ -297,7 +259,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun showGuidelinesDialog() {
         val dialog = android.app.Dialog(this)
         dialog.setContentView(R.layout.dialog_guidelines)
-        
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         // Set dialog width to 90% of screen width to prevent "squished" look
@@ -309,67 +270,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         btnClose.setOnClickListener {
             if (cbDontShow.isChecked) {
-                val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
-                prefs.edit().putBoolean("dont_show_guidelines", true).apply()
+                getSharedPreferences("app_settings", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("dont_show_guidelines", true)
+                    .apply()
             }
             dialog.dismiss()
         }
+
         dialog.show()
-    }
-
-    private fun checkForUpdates(isManual: Boolean = false) {
-        val updateUrl = "https://raw.githubusercontent.com/reign161826/trans-app-updates/refs/heads/main/version.json"
-        
-        Thread {
-            try {
-                val connection = java.net.URL(updateUrl).openConnection() as java.net.HttpURLConnection
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-                
-                val jsonString = connection.inputStream.bufferedReader().use { it.readText() }
-                val json = JSONObject(jsonString)
-                val latestVersionCode = json.getInt("versionCode")
-                val downloadUrl = json.getString("downloadUrl")
-                val releaseNotes = json.optString("releaseNotes", "A new version of the app is available.")
-
-                val currentVersionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                    packageManager.getPackageInfo(packageName, 0).longVersionCode
-                } else {
-                    @Suppress("DEPRECATION")
-                    packageManager.getPackageInfo(packageName, 0).versionCode.toLong()
-                }
-
-                if (latestVersionCode > currentVersionCode) {
-                    handler.post {
-                        showUpdateDialog(downloadUrl, releaseNotes)
-                    }
-                } else if (isManual) {
-                    handler.post {
-                        Toast.makeText(this, "App is up to date", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } catch (e: Exception) {
-                if (isManual) {
-                    handler.post {
-                        Toast.makeText(this, "Failed to check for updates", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                e.printStackTrace()
-            }
-        }.start()
-    }
-
-    private fun showUpdateDialog(downloadUrl: String, notes: String) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Update Available")
-            .setMessage(notes)
-            .setCancelable(true)
-            .setPositiveButton("Download") { _, _ ->
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
-                startActivity(intent)
-            }
-            .setNegativeButton("Later", null)
-            .show()
     }
 
     override fun onInit(status: Int) {
@@ -426,25 +335,23 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun dispatchTakePictureIntent() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        if (takePictureIntent.resolveActivity(packageManager) != null) {
-            photoFile = try {
-                createImageFile()
-            } catch (ex: IOException) {
-                Toast.makeText(this, "Error creating image file", Toast.LENGTH_SHORT).show()
-                null
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+            takePictureIntent.resolveActivity(packageManager)?.also {
+                photoFile = try {
+                    createImageFile()
+                } catch (ex: IOException) {
+                    null
+                }
+                photoFile?.also {
+                    photoUri = FileProvider.getUriForFile(
+                        this,
+                        "com.example.myapplication.fileprovider",
+                        it
+                    )
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                    startActivityForResult(takePictureIntent, CAMERA_REQUEST_CODE)
+                }
             }
-            photoFile?.also {
-                photoUri = FileProvider.getUriForFile(
-                    this,
-                    "com.example.myapplication.fileprovider",
-                    it
-                )
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-                startActivityForResult(takePictureIntent, CAMERA_REQUEST_CODE)
-            }
-        } else {
-            Toast.makeText(this, "No camera app found", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -468,34 +375,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 performTranslation(result[0], isManualTrigger = true)
             }
         } else if (requestCode == CAMERA_REQUEST_CODE && resultCode == RESULT_OK) {
-            photoUri?.let {
-                recognizeTextFromImage(it)
-            } ?: photoFile?.let {
+            photoFile?.let {
                 val bitmap = BitmapFactory.decodeFile(it.absolutePath)
-                if (bitmap != null) {
-                    recognizeTextFromImage(bitmap)
-                }
+                recognizeTextFromImage(bitmap)
             }
         }
     }
 
-    private fun recognizeTextFromImage(uri: Uri) {
-        val image: InputImage = try {
-            InputImage.fromFilePath(this, uri)
-        } catch (e: IOException) {
-            Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show()
-            return
-        }
-        processImage(image)
-    }
-
     private fun recognizeTextFromImage(bitmap: Bitmap) {
         val image = InputImage.fromBitmap(bitmap, 0)
-        processImage(image)
-    }
-
-    private fun processImage(image: InputImage) {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
         recognizer.process(image)
             .addOnSuccessListener { visionText ->
                 val resultText = visionText.text
@@ -512,43 +402,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun speakText(text: String, isTarget: Boolean = true) {
-        // 1. Prepare filename: lowercase, replace spaces with underscores, remove special chars
-        val cleanFileName = text.lowercase().trim()
-            .replace(" ", "_")
-            .replace(Regex("[^a-z0-9_]"), "")
-
-        // 2. Check if a recording exists in res/raw
-        val resId = resources.getIdentifier(cleanFileName, "raw", packageName)
-
-        if (resId != 0) {
-            // 3. Play the human recording
-            playRecording(resId)
-        } else {
-            // 4. Fallback to robotic TTS if no recording found
-            val lang = if (isTarget) spinnerTarget.selectedItem.toString() else spinnerSource.selectedItem.toString()
-            val locale = when (lang) {
-                "English" -> Locale.US
-                "Filipino" -> Locale("fil", "PH")
-                else -> Locale.US
-            }
-            tts?.language = locale
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+        val lang = if (isTarget) spinnerTarget.selectedItem.toString() else spinnerSource.selectedItem.toString()
+        val locale = when (lang) {
+            "English" -> Locale.US
+            "Filipino" -> Locale("fil", "PH")
+            else -> Locale.US
         }
-    }
-
-    private fun playRecording(resId: Int) {
-        try {
-            mediaPlayer?.stop()
-            mediaPlayer?.release()
-            mediaPlayer = MediaPlayer.create(this, resId)
-            mediaPlayer?.setOnCompletionListener { 
-                it.release()
-                mediaPlayer = null
-            }
-            mediaPlayer?.start()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        tts?.language = locale
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
     override fun onDestroy() {
@@ -556,8 +417,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             it.stop()
             it.shutdown()
         }
-        mediaPlayer?.release()
-        mediaPlayer = null
+        onnxTranslator.close()
         super.onDestroy()
     }
 
@@ -581,10 +441,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 // Set spinners to matching languages
                 setSpinnerSelection(spinnerSource, sourceLang)
                 setSpinnerSelection(spinnerTarget, targetLang)
-            }
-
-            if (it.getBooleanExtra("checkUpdate", false)) {
-                checkForUpdates(isManual = true)
             }
         }
     }
@@ -633,8 +489,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         }
 
-        val translated = translateOffline(text, sourceLang, targetLang)
+        // Try ONNX Model first for supported pairs
+        val onnxResult = onnxTranslator.translate(text, sourceLang, targetLang)
+        if (onnxResult.isNotEmpty() && !onnxResult.startsWith("Error:")) {
+            outputText.text = onnxResult
+            saveToHistory(text, onnxResult)
+            return
+        }
 
+        val translated = translateOffline(text, sourceLang, targetLang)
         outputText.text = translated
         saveToHistory(text, translated)
     }
@@ -700,50 +563,26 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
 
         val editWord = dialog.findViewById<EditText>(R.id.edit_word)
-        val labelSource = dialog.findViewById<TextView>(R.id.label_source_language)
-        val labelT1 = dialog.findViewById<TextView>(R.id.label_translation_1)
-        val editT1 = dialog.findViewById<EditText>(R.id.edit_translation_1)
-        val labelT2 = dialog.findViewById<TextView>(R.id.label_translation_2)
-        val editT2 = dialog.findViewById<EditText>(R.id.edit_translation_2)
+        val editTranslation1 = dialog.findViewById<EditText>(R.id.edit_translation_1)
+        val editTranslation2 = dialog.findViewById<EditText>(R.id.edit_translation_2)
         val editDescription = dialog.findViewById<EditText>(R.id.edit_description)
         val btnSubmit = dialog.findViewById<android.widget.Button>(R.id.btn_submit_suggestion)
         val btnClose = dialog.findViewById<ImageButton>(R.id.btn_close_dialog)
 
-        // Determine labels based on source language
-        labelSource.text = getString(R.string.label_language_source, lang)
-        val targets = when (lang) {
-            "English" -> Pair("Filipino", "Cuyonon")
-            "Filipino" -> Pair("English", "Cuyonon")
-            "Cuyonon" -> Pair("English", "Filipino")
-            else -> Pair("Translation 1", "Translation 2")
-        }
-
-        labelT1.text = getString(R.string.label_translation_optional).replace("Translation", targets.first)
-        labelT2.text = getString(R.string.label_translation_optional).replace("Translation", targets.second)
-        editT1.hint = getString(R.string.hint_translation_optional).replace("translation", targets.first.lowercase())
-        editT2.hint = getString(R.string.hint_translation_optional).replace("translation", targets.second.lowercase())
-        
         editWord.setText(word)
-        // Ensure word field is non-editable in code as well
-        editWord.apply {
-            isFocusable = false
-            isFocusableInTouchMode = false
-            isClickable = false
-            isLongClickable = false
-        }
 
         btnSubmit.setOnClickListener {
             val suggestedWord = editWord.text.toString().trim()
-            val t1 = editT1.text.toString().trim()
-            val t2 = editT2.text.toString().trim()
+            val translation1 = editTranslation1.text.toString().trim()
+            val translation2 = editTranslation2.text.toString().trim()
             val description = editDescription.text.toString().trim()
 
-            if (suggestedWord.isEmpty()) {
-                Toast.makeText(this, "Please fill in the word to suggest", Toast.LENGTH_SHORT).show()
+            if (suggestedWord.isEmpty() || (translation1.isEmpty() && translation2.isEmpty())) {
+                Toast.makeText(this, "Please fill in the word and at least one translation", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            sendWordToDeveloper(lang, suggestedWord, t1, t2, description)
+            sendWordToDeveloper(lang, suggestedWord, translation1, translation2, description)
             dialog.dismiss()
         }
 
@@ -810,36 +649,28 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val reader = inputStream.bufferedReader()
             reader.useLines { lines ->
                 lines.toList().drop(1).forEach { line ->
-                    val tokens = if (line.contains("\t")) line.split("\t") else line.split(",")
+                    val tokens = line.split(",")
                     if (tokens.size >= 3) {
-                        addTrilingualEntry(tokens[0], tokens[1], tokens[2])
+                        val english = tokens[0].trim().lowercase()
+                        val filipino = tokens[1].trim().lowercase()
+                        val cuyonon = tokens[2].trim().lowercase()
+
+                        if (english.isNotEmpty()) {
+                            englishWords.add(english)
+                            if (cuyonon.isNotEmpty()) cuyononDictionary[english] = cuyonon
+                        }
+                        if (filipino.isNotEmpty()) {
+                            filipinoWords.add(filipino)
+                            if (cuyonon.isNotEmpty()) filipinoToCuyonon[filipino] = cuyonon
+                        }
+                        if (cuyonon.isNotEmpty()) {
+                            cuyononWords.add(cuyonon)
+                        }
                     }
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-        }
-    }
-
-    private fun addTrilingualEntry(eng: String, fil: String, cuy: String) {
-        val e = eng.lowercase().trim()
-        val f = fil.lowercase().trim()
-        val c = cuy.lowercase().trim()
-
-        if (e.isNotEmpty()) {
-            englishWords.add(e)
-            if (f.isNotEmpty()) englishToFilipino[e] = f
-            if (c.isNotEmpty()) englishToCuyonon[e] = c
-        }
-        if (f.isNotEmpty()) {
-            filipinoWords.add(f)
-            if (e.isNotEmpty()) filipinoToEnglish[f] = e
-            if (c.isNotEmpty()) filipinoToCuyonon[f] = c
-        }
-        if (c.isNotEmpty()) {
-            cuyononWords.add(c)
-            if (e.isNotEmpty()) cuyononToEnglish[c] = e
-            if (f.isNotEmpty()) cuyononToFilipino[c] = f
         }
     }
 
@@ -856,9 +687,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 
                 if (word.isNotEmpty()) {
                     when (sourceLang) {
-                        "English" -> addTrilingualEntry(word, t1, t2)
-                        "Filipino" -> addTrilingualEntry(t1, word, t2)
-                        "Cuyonon" -> addTrilingualEntry(t1, t2, word)
+                        "English" -> {
+                            englishWords.add(word)
+                            if (t2.isNotEmpty()) cuyononDictionary[word] = t2 // Cuyonon is t2 for English
+                            // If we had an English-to-Filipino map, we'd put t1 there
+                        }
+                        "Filipino" -> {
+                            filipinoWords.add(word)
+                            if (t2.isNotEmpty()) filipinoToCuyonon[word] = t2 // Cuyonon is t2 for Filipino
+                        }
+                        "Cuyonon" -> {
+                            cuyononWords.add(word)
+                            if (t1.isNotEmpty()) {
+                                // Add to a reverse map if needed, 
+                                // currently translateOffline handles Cuyonon via reverse lookup of English/Filipino maps
+                                // So we should actually add the translations to the primary maps
+                                cuyononDictionary[t1] = word // t1 is English
+                                filipinoToCuyonon[t2] = word // t2 is Filipino
+                            }
+                        }
                     }
                 }
             }
@@ -867,109 +714,85 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun translateOffline(text: String, source: String, target: String): String {
         val lowerText = text.lowercase().trim()
-        
-        val map = when (source) {
-            "English" -> if (target == "Filipino") englishToFilipino else englishToCuyonon
-            "Filipino" -> if (target == "English") filipinoToEnglish else filipinoToCuyonon
-            "Cuyonon" -> if (target == "English") cuyononToEnglish else cuyononToFilipino
-            else -> emptyMap<String, String>()
+
+        if (target == "Cuyonon") {
+            if (source == "English") {
+                return cuyononDictionary[lowerText] ?: translateByWords(lowerText, cuyononDictionary)
+            } else if (source == "Filipino") {
+                return filipinoToCuyonon[lowerText] ?: translateByWords(lowerText, filipinoToCuyonon)
+            }
+        } else if (source == "Cuyonon") {
+            // Reverse lookup for Cuyonon to English/Filipino
+            val targetMap = if (target == "English") {
+                cuyononDictionary.entries.associate { it.value to it.key }
+            } else {
+                filipinoToCuyonon.entries.associate { it.value to it.key }
+            }
+            return targetMap[lowerText] ?: translateByWords(lowerText, targetMap)
         }
 
+        // Fallback to old hardcoded logic for English-Filipino
+        val dictionary = mapOf(
+            "English-Filipino" to mapOf(
+                "hello" to "kumusta",
+                "good morning" to "magandang umaga",
+                "good afternoon" to "magandang hapon",
+                "good evening" to "magandang gabi",
+                "thank you" to "salamat",
+                "thank you very much" to "maraming salamat",
+                "goodbye" to "paalam",
+                "how much" to "magkano",
+                "where is" to "nasaan ang",
+                "water" to "tubig",
+                "food" to "pagkain",
+                "eat" to "kain",
+                "yes" to "oo",
+                "no" to "hindi",
+                "i love you" to "mahal kita",
+                "help" to "tulong",
+                "friend" to "kaibigan",
+                "beautiful" to "maganda",
+                "happy" to "masaya",
+                "sorry" to "patawad",
+                "what" to "ano",
+                "this" to "ito",
+                "what is this" to "ano ito"
+            ),
+            "Filipino-English" to mapOf(
+                "kumusta" to "hello",
+                "magandang umaga" to "good morning",
+                "magandang hapon" to "good afternoon",
+                "magandang gabi" to "good evening",
+                "salamat" to "thank you",
+                "maraming salamat" to "thank you very much",
+                "paalam" to "goodbye",
+                "magkano" to "how much",
+                "nasaan ang" to "where is",
+                "tubig" to "water",
+                "pagkain" to "food",
+                "kain" to "eat",
+                "oo" to "yes",
+                "hindi" to "no",
+                "mahal kita" to "i love you",
+                "tulong" to "help",
+                "kaibigan" to "friend",
+                "maganda" to "beautiful",
+                "masaya" to "happy",
+                "patawad" to "sorry",
+                "ano" to "what",
+                "ito" to "this",
+                "ano ito" to "what is this?"
+            )
+        )
+
+        val key = "$source-$target"
+        val langDict = dictionary[key] ?: return text
+        
         // 1. Try to find exact match
-        map[lowerText]?.let { return it }
-
-        // 2. Apply Grammar Rules (General patterns)
-        val grammarResult = applyGrammarRules(lowerText, source, target, map)
-        if (grammarResult != null) return grammarResult
+        langDict[lowerText]?.let { return it }
         
-        // 3. Word-by-word fallback
-        return translateByWords(lowerText, map)
-    }
-
-    private fun applyGrammarRules(text: String, source: String, target: String, dict: Map<String, String>): String? {
-        val words = text.split("\\s+".toRegex())
-
-        // --- TO ENGLISH RULES ---
-        if (target == "English") {
-            // Rule 1: Negation "Hindi/Indi [Adj] [Pronoun]" -> "[Pronoun] is/are not [Adj]"
-            // Example: "Hindi panget mo" -> "You are not ugly"
-            if (words.size == 3 && (words[0] == "hindi" || words[0] == "indi")) {
-                val adj = dict[words[1]]
-                val subject = dict[words[2]]
-                if (adj != null && subject != null) {
-                    return "${subject.replaceFirstChar { it.uppercase() }} ${getVerb(subject)} not $adj"
-                }
-            }
-
-            // Rule 2: "Ang [Adj] [Pronoun]" (Filipino) -> "[Pronoun] is/are [Adj]"
-            if (words.size == 3 && words[0] == "ang") {
-                val adj = dict[words[1]]
-                val subject = dict[words[2]]
-                if (adj != null && subject != null) {
-                    return "${subject.replaceFirstChar { it.uppercase() }} ${getVerb(subject)} $adj"
-                }
-            }
-
-            // Rule 3: "Mga [Noun]" -> "[Noun]s" (Simple Plurality)
-            if (words.size == 2 && words[0] == "mga") {
-                val noun = dict[words[1]]
-                if (noun != null) return "${noun}s"
-            }
-
-            // Rule 4: "[Adj] [Pronoun]" (Cuyonon/Filipino style) -> "[Pronoun] is/are [Adj]"
-            if (words.size == 2) {
-                val adj = dict[words[0]]
-                val subject = dict[words[1]]
-                if (adj != null && subject != null && isPronoun(subject)) {
-                    return "${subject.replaceFirstChar { it.uppercase() }} ${getVerb(subject)} $adj"
-                }
-            }
-
-            // Rule 7: "Saan/Sadin ang [Noun]" -> "Where is the [Noun]"
-            if (words.size >= 2 && (words[0] == "saan" || words[0] == "sadin")) {
-                val remainingWords = if (words.size > 1 && words[1] == "ang") words.drop(2) else words.drop(1)
-                val translatedNoun = remainingWords.map { dict[it] ?: it }.joinToString(" ")
-                if (translatedNoun.isNotEmpty()) {
-                    return "Where is the $translatedNoun"
-                }
-            }
-        }
-
-        // --- FROM ENGLISH RULES ---
-        if (source == "English") {
-            // Rule 5: "[Pronoun] [am/is/are] [Adj]" -> "[Adj] [Pronoun]" or "Ako ay [Adj]"
-            if (words.size == 3 && (words[1] == "am" || words[1] == "is" || words[1] == "are")) {
-                val subject = dict[words[0]]
-                val adj = dict[words[2]]
-                if (subject != null && adj != null) {
-                    return if (target == "Filipino") "$subject ay $adj" else "$adj $subject"
-                }
-            }
-
-            // Rule 6: "Where is/are (the) [Noun]" -> "Saan (ang) [Noun]"
-            // Example: "Where is the pharmacy" -> "Saan ang botika"
-            if (words.size >= 3 && words[0] == "where" && (words[1] == "is" || words[1] == "are")) {
-                val translatedRemaining = words.drop(2).map { dict[it] ?: it }.joinToString(" ")
-                val where = dict["where"] ?: if (target == "Filipino") "saan" else "sadin"
-                return "${where.replaceFirstChar { it.uppercase() }} $translatedRemaining"
-            }
-        }
-
-        return null
-    }
-
-    private fun getVerb(subject: String): String {
-        val s = subject.lowercase()
-        return when {
-            s == "i" -> "am"
-            s == "you" || s == "we" || s == "they" -> "are"
-            else -> "is"
-        }
-    }
-
-    private fun isPronoun(word: String): Boolean {
-        val pronouns = listOf("i", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them")
-        return pronouns.contains(word.lowercase())
+        // 2. Word-by-word fallback
+        return translateByWords(lowerText, langDict)
     }
 
     private fun translateByWords(text: String, dict: Map<String, String>): String {
@@ -1026,9 +849,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             R.id.nav_home -> {
                 // Already on Home
-            }
-            R.id.nav_update -> {
-                checkForUpdates(isManual = true)
             }
         }
         drawerLayout.closeDrawer(GravityCompat.START)
